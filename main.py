@@ -30,7 +30,7 @@ def get_user_data(chat_id):
 
 # ====================== KEYBOARDS ======================
 def main_menu_markup():
-    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup = types.InlineKeyboardMarkup(row_width=3)
     markup.add(
         types.InlineKeyboardButton("🎬 Netflix", callback_data="netflix"),
         types.InlineKeyboardButton("🍿 Prime Video", callback_data="prime")
