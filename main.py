@@ -123,10 +123,10 @@ Every cookie is checked before delivery.
         edit_current_message(call, welcome_text, main_menu_markup())
 
     elif data == "netflix":
-        edit_current_message(call, "🎬 <b>Choose Netflix Tier:</b>", netflix_tier_markup())
+        edit_current_message(call, "🔽 Choose a tier below:", netflix_tier_markup())
 
     elif data == "prime":
-        edit_current_message(call, "🍿 <b>Prime Video Tier:</b>", prime_tier_markup())
+        edit_current_message(call, "🔽 Choose a tier below:", prime_tier_markup())
 
     # Tier Selection
     elif data.startswith("tier_"):
@@ -136,13 +136,13 @@ Every cookie is checked before delivery.
         if STOCK.get(tier, 0) <= 0:
             edit_current_message(call, "❌ <b>Out of stock!</b>", None)
             time.sleep(1.5)
-            edit_current_message(call, "🎬 <b>Choose Netflix Tier:</b>", netflix_tier_markup())
+            edit_current_message(call, "🔽 Choose a tier below:", netflix_tier_markup())
             return
 
         if user["used"].get(tier, 0) >= 3:
             edit_current_message(call, "⏳ You reached the hourly limit for this tier.", None)
             time.sleep(1.5)
-            edit_current_message(call, "🎬 <b>Choose Netflix Tier:</b>", netflix_tier_markup())
+            edit_current_message(call, "🔽 Choose a tier below:", netflix_tier_markup())
             return
 
         # Deliver cookie
@@ -225,9 +225,9 @@ Use responsibly!"""
 4️⃣  Use the NFToken link to watch directly
 
 📁 📁 <b>TIERS:</b>
- 👑 Premium — Full 4K, up to 4 screens
- ⭐ Standard — 1080p HD, up to 2 screens
- 🎯 Basic/Mobile — 720p, 1 screen
+  👑 Premium — Full 4K, up to 4 screens
+  ⭐ Standard — 1080p HD, up to 2 screens
+  🎯 Basic/Mobile — 720p, 1 screen
 
 💡 <i>Use cookies responsibly.</i>"""
 
