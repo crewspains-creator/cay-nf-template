@@ -421,8 +421,9 @@ def handle_callback(call):
         lang_name    = languages.get_lang_name(lang)
         text, markup = build_home(chat_id, lang)
         # Prepend confirmation to the home page text
-        full_text = f"✅ <b>Language set to {lang_name}</b>\n\n" + text
-        edit_current_message(call, full_text, markup)
+        edit_current_message(call, f"✅ <b>Language set to {lang_name}</b>")
+        time.sleep(0.8)
+        bot.send_message(chat_id, text, reply_markup=markup, parse_mode="HTML")
 
     elif data.startswith("by_country_"):
         # e.g. by_country_netflix — show country usage hint

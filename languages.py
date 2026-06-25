@@ -80,6 +80,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Live-verified Premium cookies across all services.\nEvery cookie is checked before delivery.</i>",
         "home_oos":         "Out of Stock",
         "home_low":         "Low",
+
+        "home_rules_header": "📌 📌 <b>RULES:</b>",
+        "home_rule1":        "3 cookies per tier per hour",
+        "home_rule2":        "Rolling 1-hour window (persists across restarts)",
+        "home_rule3":        "Dead cookies are auto-removed",
     },
 
     "es": {
@@ -154,6 +159,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Cookies Premium verificadas en vivo en todos los servicios.\nCada cookie se verifica antes de la entrega.</i>",
         "home_oos":         "Sin stock",
         "home_low":         "Bajo",
+
+        "home_rules_header": "📌 📌 <b>REGLAS:</b>",
+        "home_rule1":        "3 cookies por nivel por hora",
+        "home_rule2":        "Ventana de 1 hora continua",
+        "home_rule3":        "Las cookies muertas se eliminan automáticamente",
     },
 
     "fr": {
@@ -228,6 +238,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Cookies Premium vérifiés en direct sur tous les services.\nChaque cookie est vérifié avant livraison.</i>",
         "home_oos":         "Rupture de stock",
         "home_low":         "Faible",
+
+        "home_rules_header": "📌 📌 <b>RÈGLES:</b>",
+        "home_rule1":        "3 cookies par niveau par heure",
+        "home_rule2":        "Fenêtre d'1 heure glissante",
+        "home_rule3":        "Les cookies morts sont supprimés automatiquement",
     },
 
     "pt": {
@@ -302,6 +317,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Cookies Premium verificados ao vivo em todos os serviços.\nCada cookie é verificado antes da entrega.</i>",
         "home_oos":         "Sem estoque",
         "home_low":         "Baixo",
+
+        "home_rules_header": "📌 📌 <b>REGRAS:</b>",
+        "home_rule1":        "3 cookies por nível por hora",
+        "home_rule2":        "Janela de 1 hora contínua",
+        "home_rule3":        "Cookies mortos são removidos automaticamente",
     },
 
     "ar": {
@@ -376,6 +396,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>كوكيز Premium مُتحقَّق منها مباشرةً عبر جميع الخدمات.\nيتم فحص كل كوكي قبل التسليم.</i>",
         "home_oos":         "نفد المخزون",
         "home_low":         "منخفض",
+
+        "home_rules_header": "📌 📌 <b>القواعد:</b>",
+        "home_rule1":        "3 كوكيز لكل مستوى في الساعة",
+        "home_rule2":        "نافذة ساعة واحدة متجددة",
+        "home_rule3":        "تتم إزالة الكوكيز الميتة تلقائياً",
     },
 
     "hi": {
@@ -450,6 +475,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>सभी सेवाओं में लाइव-वेरिफाइड Premium कुकीज़।\nहर कुकी डिलीवरी से पहले चेक की जाती है।</i>",
         "home_oos":         "स्टॉक खत्म",
         "home_low":         "कम",
+
+        "home_rules_header": "📌 📌 <b>नियम:</b>",
+        "home_rule1":        "प्रति टियर प्रति घंटे 3 कुकीज़",
+        "home_rule2":        "रोलिंग 1 घंटे की विंडो",
+        "home_rule3":        "मृत कुकीज़ स्वचालित रूप से हटा दी जाती हैं",
     },
 
     "id": {
@@ -524,6 +554,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Cookie Premium terverifikasi langsung di semua layanan.\nSetiap cookie dicek sebelum dikirim.</i>",
         "home_oos":         "Stok habis",
         "home_low":         "Rendah",
+
+        "home_rules_header": "📌 📌 <b>ATURAN:</b>",
+        "home_rule1":        "3 cookie per tingkat per jam",
+        "home_rule2":        "Jendela 1 jam bergulir",
+        "home_rule3":        "Cookie mati dihapus otomatis",
     },
 
     "ru": {
@@ -598,6 +633,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Живые Premium куки по всем сервисам.\nКаждый куки проверяется перед отправкой.</i>",
         "home_oos":         "Нет в наличии",
         "home_low":         "Мало",
+
+        "home_rules_header": "📌 📌 <b>ПРАВИЛА:</b>",
+        "home_rule1":        "3 куки на уровень в час",
+        "home_rule2":        "Скользящее окно 1 час",
+        "home_rule3":        "Мёртвые куки удаляются автоматически",
     },
 
     "tr": {
@@ -672,6 +712,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Tüm hizmetlerde canlı doğrulanmış Premium çerezler.\nHer çerez teslimattan önce kontrol edilir.</i>",
         "home_oos":         "Stok yok",
         "home_low":         "Az",
+
+        "home_rules_header": "📌 📌 <b>KURALLAR:</b>",
+        "home_rule1":        "Saat başı kademe başına 3 çerez",
+        "home_rule2":        "Kayan 1 saatlik pencere",
+        "home_rule3":        "Ölü çerezler otomatik kaldırılır",
     },
 
     "de": {
@@ -746,6 +791,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Live-verifizierte Premium-Cookies für alle Dienste.\nJeder Cookie wird vor der Lieferung geprüft.</i>",
         "home_oos":         "Nicht vorrätig",
         "home_low":         "Niedrig",
+
+        "home_rules_header": "📌 📌 <b>REGELN:</b>",
+        "home_rule1":        "3 Cookies pro Stufe pro Stunde",
+        "home_rule2":        "Gleitendes 1-Stunden-Fenster",
+        "home_rule3":        "Tote Cookies werden automatisch entfernt",
     },
 
     "it": {
@@ -820,6 +870,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>Cookie Premium verificati in tempo reale su tutti i servizi.\nOgni cookie viene verificato prima della consegna.</i>",
         "home_oos":         "Esaurito",
         "home_low":         "Basso",
+
+        "home_rules_header": "📌 📌 <b>REGOLE:</b>",
+        "home_rule1":        "3 cookie per livello all'ora",
+        "home_rule2":        "Finestra di 1 ora scorrevole",
+        "home_rule3":        "I cookie morti vengono rimossi automaticamente",
     },
 
     "ja": {
@@ -894,6 +949,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>全サービスでリアルタイム検証済みのPremiumクッキー。\nすべてのクッキーは配信前に確認されます。</i>",
         "home_oos":         "在庫切れ",
         "home_low":         "少ない",
+
+        "home_rules_header": "📌 📌 <b>ルール：</b>",
+        "home_rule1":        "1段階あたり1時間に3クッキー",
+        "home_rule2":        "ローリング1時間ウィンドウ",
+        "home_rule3":        "無効なクッキーは自動削除",
     },
 
     "ko": {
@@ -968,6 +1028,11 @@ LANGUAGES = {
         "home_live_line":   "⚡ <i>모든 서비스의 실시간 인증 Premium 쿠키.\n모든 쿠키는 배달 전에 확인됩니다.</i>",
         "home_oos":         "재고 없음",
         "home_low":         "낮음",
+
+        "home_rules_header": "📌 📌 <b>규칙:</b>",
+        "home_rule1":        "등급당 시간당 3개 쿠키",
+        "home_rule2":        "롤링 1시간 윈도우",
+        "home_rule3":        "죽은 쿠키는 자동 제거",
     },
 }
 
