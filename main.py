@@ -82,15 +82,16 @@ def edit_current_message(call, text: str, reply_markup=None):
 def start_command(message):
     welcome_text = """👋 <b>WELCOME, CAY!</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
+
 ⚡ Live-verified Netflix cookies across 3 tiers.
 Every cookie is checked before delivery.
 
-📌📌 <b>RULES:</b>
+📌 📌 <b>RULES:/b>
   • 📈 3 cookies per tier per hour
-  • 🕒 Rolling 1-hour window (persists across restarts)
+  • ⏱️ Rolling 1-hour window (persists across restarts)
   • ❌ Dead cookies are auto-removed
 
-⬇️⬇️ <b>CHOOSE A SERVICE BELOW:</b>"""
+🔽 🔽 <b>CHOOSE A SERVICE BELOW:</b>"""
 
     bot.send_message(
         message.chat.id,
