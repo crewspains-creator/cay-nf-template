@@ -43,7 +43,7 @@ def get_user_data(chat_id):
 
 # ====================== KEYBOARDS ======================
 def main_menu_markup(lang="en"):
-    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup = types.InlineKeyboardMarkup(row_width=3)
     markup.add(
         types.InlineKeyboardButton("🎬 Netflix",     callback_data="netflix"),
         types.InlineKeyboardButton("🍿 Prime Video", callback_data="prime")
@@ -142,7 +142,7 @@ def build_home(chat_id, lang="en"):
 
     text  = f"👋 <b>WELCOME, {name.upper()}!</b>\n"
     text += f"👤 <b>USER PROFILE:</b>\n"
-    text += f"  ├ 📛 Name: {name}\n"
+    text += f"  ├ 📛 Name: <code>{name}</code>\n"
     text += f"  ├ 🆔 User ID: <code>{chat_id}</code>\n"
     text += f"  ├ 🌐 Language: <code>{languages.get_lang_name(lang)}</code>\n"
     text += f"  └ 🏅 Status: <code>Active Member</code>\n\n"
