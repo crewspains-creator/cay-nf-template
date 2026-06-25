@@ -30,37 +30,37 @@ def get_user_data(chat_id):
 
 # ====================== KEYBOARDS ======================
 def main_menu_markup(lang="en"):
-    markup = types.InlineKeyboardMarkup(row_width=3)
+    markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
         types.InlineKeyboardButton(languages.get_text(lang, "btn_netflix"), callback_data="netflix"),
-        types.InlineKeyboardButton(languages.get_text(lang, "btn_prime"), callback_data="prime")
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_prime"),   callback_data="prime")
     )
     markup.add(
-        types.InlineKeyboardButton("📊 Status", callback_data="status"),
-        types.InlineKeyboardButton("📦 Stock", callback_data="stock"),
-        types.InlineKeyboardButton("ℹ️ Help", callback_data="help")
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_status"),  callback_data="status"),
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_stock"),   callback_data="stock"),
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_help"),    callback_data="help")
     )
-    markup.add(types.InlineKeyboardButton("🌐 Language", callback_data="language"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_language"), callback_data="language"))
     return markup
 
-def netflix_tier_markup():
+def netflix_tier_markup(lang="en"):
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
-        types.InlineKeyboardButton(f"👑 Premium ({STOCK['premium']})", callback_data="tier_premium"),
-        types.InlineKeyboardButton(f"⭐ Standard ({STOCK['standard']})", callback_data="tier_standard")
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_premium",  n=STOCK["premium"]),  callback_data="tier_premium"),
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_standard", n=STOCK["standard"]), callback_data="tier_standard")
     )
-    markup.add(types.InlineKeyboardButton(f"🎯 Basic ({STOCK['basic']})", callback_data="tier_basic"))
-    markup.add(types.InlineKeyboardButton("🌍 By Country", callback_data="by_country_netflix"))
-    markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_basic", n=STOCK["basic"]), callback_data="tier_basic"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_by_country"), callback_data="by_country_netflix"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_main_menu"),  callback_data="main_menu"))
     return markup
 
-def prime_tier_markup():
+def prime_tier_markup(lang="en"):
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
-        types.InlineKeyboardButton(f"🍿 Prime Video ({STOCK['prime']})", callback_data="tier_prime")
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_prime_video", n=STOCK["prime"]), callback_data="tier_prime")
     )
-    markup.add(types.InlineKeyboardButton("🌍 By Country", callback_data="by_country_prime"))
-    markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_by_country"), callback_data="by_country_prime"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_main_menu"),  callback_data="main_menu"))
     return markup
 
 def lang_markup():
@@ -88,67 +88,65 @@ def lang_markup():
     markup.add(types.InlineKeyboardButton("🇰🇷 한국어", callback_data="lang_ko"))
     return markup
 
-# ====================== SHARED RENDER FUNCTIONS ======================
-# Each function builds (text, markup) and either sends or edits based on context.
-
-WELCOME_TEXT = """👋 <b>WELCOME, CAY!</b>
-━━━━━━━━━━━━━━━━━━━━━━━━
-
-⚡ Live-verified Netflix cookies across 3 tiers.
-Every cookie is checked before delivery.
-
-📌 📌 <b>RULES:</b>
-  • 📈 3 cookies per tier per hour
-  • ⏱️ Rolling 1-hour window (persists across restarts)
-  • ❌ Dead cookies are auto-removed
-
-🔽 🔽 <b>CHOOSE A SERVICE BELOW:</b>"""
-
-def build_status(chat_id):
+# ====================== BUILD FUNCTIONS ======================
+def build_status(chat_id, lang="en"):
     user = get_user_data(chat_id)
-    text = "📊📊 <b>YOUR USAGE STATUS</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-    tiers = [
-        ("premium", "👑 PREMIUM TIER"),
-        ("standard", "⭐ STANDARD TIER"),
-        ("basic", "🎯 BASIC TIER"),
-        ("prime", "🍿 PRIME VIDEO TIER"),
+    text = languages.get_text(lang, "status_title")
+    tier_keys = [
+        ("premium", "tier_premium"),
+        ("standard", "tier_standard"),
+        ("basic",   "tier_basic"),
+        ("prime",   "tier_prime"),
     ]
-    for t, name in tiers:
-        used = user["used"].get(t, 0)
-        left = max(0, 3 - used)
+    for t, name_key in tier_keys:
+        used  = user["used"].get(t, 0)
+        left  = max(0, 3 - used)
         stock = STOCK.get(t, 0)
         reset_at = user["last_reset"] + timedelta(hours=1)
         now = datetime.now()
         if used > 0 and now < reset_at:
             diff = reset_at - now
-            resets_str = f"{int(diff.total_seconds() // 60)}m {int(diff.total_seconds() % 60)}s"
+            m = int(diff.total_seconds() // 60)
+            s = int(diff.total_seconds() % 60)
+            resets_str = languages.get_text(lang, "resets_soon", m=m, s=s)
         else:
-            resets_str = "—"
-        text += (
-            f"<b>{name}</b>\n"
-            f"  📈 Used: <code>{used}/3</code>\n"
-            f"  🔄 Left: <code>{left}</code>\n"
-            f"  📦 Stock: <code>{stock}</code>\n"
-            f"  🕐 Resets: <code>{resets_str}</code>\n\n"
+            resets_str = languages.get_text(lang, "resets_none")
+        text += languages.get_text(
+            lang, "status_tier",
+            name=languages.get_text(lang, name_key),
+            used=used, left=left, stock=stock, resets=resets_str
         )
-    text += "💡 <i>Limits reset on a rolling basis every hour.</i>"
+    text += languages.get_text(lang, "status_footer")
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🔄 Refresh", callback_data="status"))
-    markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_refresh"),   callback_data="status"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_main_menu"), callback_data="main_menu"))
     return text, markup
 
-def build_stock():
-    text = "📦 📦 <b>COOKIE STOCK</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-    for t, name in [("premium", "👑 PREMIUM"), ("standard", "⭐ STANDARD"),
-                    ("basic", "🎯 BASIC"), ("prime", "🍿 PRIME VIDEO")]:
-        text += f"<b>{name}:</b> <code>{STOCK[t]} accounts</code>\n🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩\n\n"
+def build_stock(lang="en"):
+    text = languages.get_text(lang, "stock_title")
+    for t, name_key in [
+        ("premium",  "stock_premium"),
+        ("standard", "stock_standard"),
+        ("basic",    "stock_basic"),
+        ("prime",    "stock_prime"),
+    ]:
+        text += languages.get_text(lang, "stock_row",
+                                   name=languages.get_text(lang, name_key),
+                                   count=STOCK[t])
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("🔄 Refresh", callback_data="stock"))
-    markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_refresh"),   callback_data="stock"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_main_menu"), callback_data="main_menu"))
     return text, markup
 
-def build_lang():
-    return "🌐 <b>Select your language:</b>", lang_markup()
+def build_help(lang="en"):
+    text = languages.get_text(lang, "help_text")
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_language"),  callback_data="language"))
+    markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_main_menu"), callback_data="main_menu"))
+    return text, markup
+
+def build_lang(lang="en"):
+    return languages.get_text(lang, "select_language"), lang_markup()
 
 # ====================== HELPERS ======================
 def edit_current_message(call, text, reply_markup=None):
@@ -164,119 +162,127 @@ def edit_current_message(call, text, reply_markup=None):
         if "message is not modified" not in str(e):
             bot.send_message(call.message.chat.id, text, reply_markup=reply_markup, parse_mode="HTML")
 
+def get_lang(chat_id):
+    return get_user_data(chat_id).get("lang", "en")
+
 # ====================== COMMANDS ======================
 @bot.message_handler(commands=['start'])
 def start_command(message):
-    bot.send_message(message.chat.id, WELCOME_TEXT, reply_markup=main_menu_markup(), parse_mode="HTML")
+    lang = get_lang(message.chat.id)
+    bot.send_message(
+        message.chat.id,
+        languages.get_text(lang, "welcome"),
+        reply_markup=main_menu_markup(lang),
+        parse_mode="HTML"
+    )
 
 @bot.message_handler(commands=['status'])
 def status_command(message):
-    text, markup = build_status(message.chat.id)
+    lang = get_lang(message.chat.id)
+    text, markup = build_status(message.chat.id, lang)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 
 @bot.message_handler(commands=['stock'])
 def stock_command(message):
-    text, markup = build_stock()
+    lang = get_lang(message.chat.id)
+    text, markup = build_stock(lang)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 
 @bot.message_handler(commands=['lang'])
 def lang_command(message):
-    text, markup = build_lang()
+    lang = get_lang(message.chat.id)
+    text, markup = build_lang(lang)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 
 @bot.message_handler(commands=['country'])
 def country_handler(message):
+    lang = get_lang(message.chat.id)
     try:
         country = message.text.split(maxsplit=1)[1].upper()
-        bot.reply_to(message, f"🔍 Searching cookies for country: <b>{country}</b>...", parse_mode="HTML")
+        bot.reply_to(
+            message,
+            languages.get_text(lang, "country_searching", country=country),
+            parse_mode="HTML"
+        )
         time.sleep(2)
-        bot.send_message(message.chat.id, f"✅ Found live cookies for <b>{country}</b> (Demo)", parse_mode="HTML")
-    except:
-        bot.reply_to(message, "Usage: <code>/country IN</code>\nExamples: US, BR, FR, DE, ID", parse_mode="HTML")
+        bot.send_message(
+            message.chat.id,
+            languages.get_text(lang, "country_found", country=country),
+            parse_mode="HTML"
+        )
+    except Exception:
+        bot.reply_to(
+            message,
+            languages.get_text(lang, "country_usage"),
+            parse_mode="HTML"
+        )
 
 # ====================== CALLBACKS ======================
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
     chat_id = call.message.chat.id
-    user = get_user_data(chat_id)
-    data = call.data
+    user    = get_user_data(chat_id)
+    lang    = user.get("lang", "en")
+    data    = call.data
 
     if data == "main_menu":
-        edit_current_message(call, WELCOME_TEXT, main_menu_markup())
+        edit_current_message(call, languages.get_text(lang, "welcome"), main_menu_markup(lang))
 
     elif data == "netflix":
-        lang = user["lang"]
         edit_current_message(call, languages.get_text(lang, "choose_netflix"), netflix_tier_markup(lang))
 
     elif data == "prime":
-        lang = user["lang"]
-        edit_current_message(call, languages.get_text(lang, "choose_netflix"), netflix_tier_markup(lang))
+        edit_current_message(call, languages.get_text(lang, "choose_prime"), prime_tier_markup(lang))
 
     elif data.startswith("tier_"):
-        tier = data.split("_")[1]
+        tier = data.split("_", 1)[1]
 
         if STOCK.get(tier, 0) <= 0:
-            edit_current_message(call, "❌ <b>Out of stock!</b>")
+            edit_current_message(call, languages.get_text(lang, "out_of_stock"))
             time.sleep(1.5)
-            back = prime_tier_markup() if tier == "prime" else netflix_tier_markup()
-            label = "PrimeVideo" if tier == "prime" else "Netflix"
-            edit_current_message(call, f"🔽 Choose a tier for <b>{label}</b>:", back)
+            back  = prime_tier_markup(lang) if tier == "prime" else netflix_tier_markup(lang)
+            label = "choose_prime"   if tier == "prime" else "choose_netflix"
+            edit_current_message(call, languages.get_text(lang, label), back)
             return
 
         if user["used"].get(tier, 0) >= 3:
-            edit_current_message(call, "⏳ You reached the hourly limit for this tier.")
+            edit_current_message(call, languages.get_text(lang, "hourly_limit"))
             time.sleep(1.5)
-            back = prime_tier_markup() if tier == "prime" else netflix_tier_markup()
-            label = "PrimeVideo" if tier == "prime" else "Netflix"
-            edit_current_message(call, f"🔽 Choose a tier for <b>{label}</b>:", back)
+            back  = prime_tier_markup(lang) if tier == "prime" else netflix_tier_markup(lang)
+            label = "choose_prime"   if tier == "prime" else "choose_netflix"
+            edit_current_message(call, languages.get_text(lang, label), back)
             return
 
         user["used"][tier] += 1
         STOCK[tier] = max(0, STOCK[tier] - 1)
-        delivery_text = (
-            f"✅ <b>{tier.upper()} COOKIE DELIVERED!</b>\n\n"
-            f"🔗 <code>https://example.com/nftoken/{tier}-{int(time.time())}</code>\n\n"
-            f"Import the cookie and open the link above.\nUse responsibly!"
-        )
-        edit_current_message(call, delivery_text, main_menu_markup())
+        url = f"https://example.com/nftoken/{tier}-{int(time.time())}"
+        delivery_text = languages.get_text(lang, "cookie_delivered", tier=tier.upper(), url=url)
+        edit_current_message(call, delivery_text, main_menu_markup(lang))
 
     elif data == "status":
-        text, markup = build_status(chat_id)
+        text, markup = build_status(chat_id, lang)
         edit_current_message(call, text, markup)
 
     elif data == "stock":
-        text, markup = build_stock()
+        text, markup = build_stock(lang)
         edit_current_message(call, text, markup)
 
     elif data == "help":
-        help_text = """ℹ️ ℹ️ <b>HOW TO USE</b>
-━━━━━━━━━━━━━━━━━━━━━━━━
-
-1️⃣  Choose a tier from the main menu
-2️⃣  Bot verifies the cookie is live before sending
-3️⃣  Import the cookie into your browser
-4️⃣  Use the NFToken link to watch directly
-
-📁 📁 <b>TIERS:</b>
-  👑 Premium — Full 4K, up to 4 screens
-  ⭐ Standard — 1080p HD, up to 2 screens
-  🎯 Basic/Mobile — 720p, 1 screen
-
-💡 <i>Use cookies responsibly.</i>"""
-        markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("🌐 Language", callback_data="language"))
-        markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
-        edit_current_message(call, help_text, markup)
+        text, markup = build_help(lang)
+        edit_current_message(call, text, markup)
 
     elif data == "language":
-        text, markup = build_lang()
+        text, markup = build_lang(lang)
         edit_current_message(call, text, markup)
 
     elif data.startswith("lang_"):
-        lang_code = data.split("_")[1]
-        user["lang"] = lang_code
-        lang = user["lang"]
+        lang_code      = data.split("_", 1)[1]
+        user["lang"]   = lang_code
+        lang           = lang_code
         edit_current_message(call, languages.get_text(lang, "welcome"), main_menu_markup(lang))
+
+    elif data in ("by_country_netflix", "by_country_prime"):
+        edit_current_message(call, languages.get_text(lang, "country_usage"))
 
     bot.answer_callback_query(call.id)
 
