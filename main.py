@@ -102,6 +102,90 @@ Every cookie is checked before delivery.
         parse_mode="HTML"
     )
 
+@bot.message_handler(commands=['status'])
+def status_command(message):
+    chat_id = message.chat.id
+    user = get_user_data(chat_id)
+    status_text = "📊📊 <b>YOUR USAGE STATUS</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    tiers = [
+        ("premium", "👑 PREMIUM TIER"),
+        ("standard", "⭐ STANDARD TIER"),
+        ("basic", "🎯 BASIC TIER"),
+        ("prime", "🍿 PRIME VIDEO TIER"),
+    ]
+    for t, name in tiers:
+        used = user["used"].get(t, 0)
+        left = max(0, 3 - used)
+        stock = STOCK.get(t, 0)
+        last_reset = user["last_reset"]
+        reset_at = last_reset + timedelta(hours=1)
+        now = datetime.now()
+        if used > 0 and now < reset_at:
+            diff = reset_at - now
+            mins = int(diff.total_seconds() // 60)
+            secs = int(diff.total_seconds() % 60)
+            resets_str = f"{mins}m {secs}s"
+        else:
+            resets_str = "—"
+        status_text += (
+            f"<b>{name}</b>\n"
+            f"  📈 Used: <code>{used}/3</code>\n"
+            f"  🔄 Left: <code>{left}</code>\n"
+            f"  📦 Stock: <code>{stock}</code>\n"
+            f"  🕐 Resets: <code>{resets_str}</code>\n\n"
+        )
+    status_text += "💡 <i>Limits reset on a rolling basis every hour.</i>"
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    bot.send_message(chat_id, status_text, reply_markup=markup, parse_mode="HTML")
+
+@bot.message_handler(commands=['stock'])
+def stock_command(message):
+    chat_id = message.chat.id
+    stock_text = "📦 📦 <b>COOKIE STOCK</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    tiers = [
+        ("premium", "👑 PREMIUM"),
+        ("standard", "⭐ STANDARD"),
+        ("basic", "🎯 BASIC"),
+        ("prime", "🍿 PRIME VIDEO"),
+    ]
+    for t, name in tiers:
+        count = STOCK[t]
+        bar = "🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩"
+        stock_text += f"<b>{name}:</b> <code>{count} accounts</code>\n{bar}\n\n"
+    markup = types.InlineKeyboardMarkup()
+    markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    bot.send_message(chat_id, stock_text, reply_markup=markup, parse_mode="HTML")
+
+@bot.message_handler(commands=['lang'])
+def lang_command(message):
+    chat_id = message.chat.id
+    lang_markup = types.InlineKeyboardMarkup(row_width=3)
+    lang_markup.add(
+        types.InlineKeyboardButton("🇬🇧 English",   callback_data="lang_en"),
+        types.InlineKeyboardButton("🇪🇸 Español",   callback_data="lang_es"),
+        types.InlineKeyboardButton("🇫🇷 Français",  callback_data="lang_fr"),
+    )
+    lang_markup.add(
+        types.InlineKeyboardButton("🇧🇷 Português", callback_data="lang_pt"),
+        types.InlineKeyboardButton("🇸🇦 العربية",   callback_data="lang_ar"),
+        types.InlineKeyboardButton("🇮🇳 हिन्दी",     callback_data="lang_hi"),
+    )
+    lang_markup.add(
+        types.InlineKeyboardButton("🇮🇩 Indonesia", callback_data="lang_id"),
+        types.InlineKeyboardButton("🇷🇺 Русский",   callback_data="lang_ru"),
+        types.InlineKeyboardButton("🇹🇷 Türkçe",    callback_data="lang_tr"),
+    )
+    lang_markup.add(
+        types.InlineKeyboardButton("🇩🇪 Deutsch",   callback_data="lang_de"),
+        types.InlineKeyboardButton("🇮🇹 Italiano",  callback_data="lang_it"),
+        types.InlineKeyboardButton("🇯🇵 日本語",     callback_data="lang_ja"),
+    )
+    lang_markup.add(
+        types.InlineKeyboardButton("🇰🇷 한국어",     callback_data="lang_ko"),
+    )
+    bot.send_message(chat_id, "🌐 <b>Select your language:</b>", reply_markup=lang_markup, parse_mode="HTML")
+
 # ====================== CALLBACKS ======================
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
@@ -298,5 +382,11 @@ def country_handler(message):
 # ====================== RUN ======================
 if __name__ == "__main__":
     print("🚀 DEADFLIX Bot is running...")
+    bot.set_my_commands([
+        types.BotCommand("start",   "Open the main menu"),
+        types.BotCommand("status",  "Check your usage limits"),
+        types.BotCommand("stock",   "View available cookie stock"),
+        types.BotCommand("country", "Get cookies for a specific country"),
+        types.BotCommand("lang",    "Change language / Cambiar idioma"),
+    ])
     bot.infinity_polling()
-
