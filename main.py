@@ -44,20 +44,22 @@ def main_menu_markup():
     return markup
 
 def netflix_tier_markup():
-    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
         types.InlineKeyboardButton(f"👑 Premium ({STOCK['premium']})", callback_data="tier_premium"),
-        types.InlineKeyboardButton(f"⭐ Standard ({STOCK['standard']})", callback_data="tier_standard"),
-        types.InlineKeyboardButton(f"🎯 Basic ({STOCK['basic']})", callback_data="tier_basic")
+        types.InlineKeyboardButton(f"⭐ Standard ({STOCK['standard']})", callback_data="tier_standard")
     )
+    markup.add(types.InlineKeyboardButton(f"🎯 Basic ({STOCK['basic']})", callback_data="tier_basic"))
+    markup.add(types.InlineKeyboardButton("🌍 By Country", callback_data="by_country_netflix"))
     markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
     return markup
 
 def prime_tier_markup():
-    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
         types.InlineKeyboardButton(f"🍿 Prime Video ({STOCK['prime']})", callback_data="tier_prime")
     )
+    markup.add(types.InlineKeyboardButton("🌍 By Country", callback_data="by_country_prime"))
     markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
     return markup
 
