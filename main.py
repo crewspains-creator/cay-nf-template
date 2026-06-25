@@ -144,15 +144,15 @@ def build_home(chat_id, lang="en"):
     text += f"👤 <b>USER PROFILE:</b>\n"
     text += f"  ├ 📛 Name: {name}\n"
     text += f"  ├ 🆔 User ID: <code>{chat_id}</code>\n"
-    text += f"  ├ 🌐 Language: {languages.get_lang_name(lang)}\n"
-    text += f"  └ 🏅 Status: Active Member\n\n"
+    text += f"  ├ 🌐 Language: <code>{languages.get_lang_name(lang)}</code>\n"
+    text += f"  └ 🏅 Status: <code>Active Member</code>\n\n"
     text += "⚡ <i>Live-verified Premium cookies across all services.\nEvery cookie is checked before delivery.</i>\n\n"
     text += "📌 📌 <b>RULES:</b>\n"
     text += "  • 📈 3 cookies per tier per hour\n"
     text += "  • 🔄 Rolling 1-hour window (persists across restarts)\n"
     text += "  • ❌ Dead cookies are auto-removed\n\n"
     text += "📊 <b>YOUR REAL-TIME STATUS:</b>\n"
-    text += "━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    text += "──────────────────────"
 
     tiers = [
         ("premium",     "🔥 PREMIUM TIER"),
@@ -184,10 +184,10 @@ def build_home(chat_id, lang="en"):
 
         bar = "🟩" * used + "⬜" * (3 - used)
 
-        text += f"\n{label}\n"
-        text += f"  ├ 📦 Stock: {stock_str}\n"
-        text += f"  ├ 📈 Usage: {used}/3 [{bar}]\n"
-        text += f"  └ 🔄 Reset: {resets_str}\n"
+        text += f"\n<b>{label}</b>\n"
+        text += f"  ├ 📦 <b>Stock:</b> <code>{stock_str}</code>\n"
+        text += f"  ├ 📈 <b>Usage:</b> <code>{used}/3</code> [{bar}]\n"
+        text += f"  └ 🔄 <b>Reset:</b> <code>{resets_str}</code>\n"
 
     text += "\n🔽 🔽 <b>CHOOSE A SERVICE BELOW:</b>"
     return text, main_menu_markup(lang)
