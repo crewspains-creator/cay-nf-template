@@ -123,10 +123,10 @@ Every cookie is checked before delivery.
         edit_current_message(call, welcome_text, main_menu_markup())
 
     elif data == "netflix":
-        edit_current_message(call, "🔽 Choose a tier below:", netflix_tier_markup())
+        edit_current_message(call, "🔽 Choose a tier for <b>Netflix</b>:", netflix_tier_markup())
 
     elif data == "prime":
-        edit_current_message(call, "🔽 Choose a tier below:", prime_tier_markup())
+        edit_current_message(call, "🔽 Choose a tier for <b>PrimeVideo</b>:", prime_tier_markup())
 
     # Tier Selection
     elif data.startswith("tier_"):
@@ -136,13 +136,13 @@ Every cookie is checked before delivery.
         if STOCK.get(tier, 0) <= 0:
             edit_current_message(call, "❌ <b>Out of stock!</b>", None)
             time.sleep(1.5)
-            edit_current_message(call, "🔽 Choose a tier below:", netflix_tier_markup())
+            edit_current_message(call, "🔽 Choose a tier for <b>Netflix</b>:", netflix_tier_markup())
             return
 
         if user["used"].get(tier, 0) >= 3:
             edit_current_message(call, "⏳ You reached the hourly limit for this tier.", None)
             time.sleep(1.5)
-            edit_current_message(call, "🔽 Choose a tier below:", netflix_tier_markup())
+            edit_current_message(call, "🔽 Choose a tier for <b>PrimeVideo</b>:", netflix_tier_markup())
             return
 
         # Deliver cookie
@@ -183,10 +183,10 @@ Use responsibly!"""
                 resets_str = "—"
             status_text += (
                 f"<b>{name}</b>\n"
-                f"  📈 Used: {used}/3\n"
-                f"  🔄 Left: {left}\n"
-                f"  📦 Stock: {stock}\n"
-                f"  🕐 Resets: {resets_str}\n"
+                f"  📈 Used: <code>{used}/3</code>\n"
+                f"  🔄 Left: <code>{left}</code>\n"
+                f"  📦 Stock: <code>{stock}</code>\n"
+                f"  🕐 Resets: <code>{resets_str}</code>\n"
             )
         status_text += "💡 <i>Limits reset on a rolling basis every hour.</i>"
 
@@ -207,7 +207,7 @@ Use responsibly!"""
         for t, name in tiers:
             count = STOCK[t]
             bar = "🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩"
-            stock_text += f"<b>{name}:</b> {count} accounts\n{bar}\n\n"
+            stock_text += f"<b>{name}:</b> <code>{count} accounts</code>\n{bar}\n\n"
 
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🔄 Refresh", callback_data="stock"))
