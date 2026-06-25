@@ -140,18 +140,20 @@ def build_home(chat_id, lang="en"):
     except Exception:
         name = "User"
 
-    text  = f"👋 <b>WELCOME, {name.upper()}!</b>\n"
-    text += f"👤 <b>USER PROFILE:</b>\n"
+    lang_name = languages.get_lang_name(lang)
+
+    text  = languages.get_text(lang, "home_welcome", name=name.upper()) + "\n"
+    text += languages.get_text(lang, "home_profile") + "\n"
     text += f"  ├ 📛 Name: <code>{name}</code>\n"
     text += f"  ├ 🆔 User ID: <code>{chat_id}</code>\n"
-    text += f"  ├ 🌐 Language: <code>{languages.get_lang_name(lang)}</code>\n"
-    text += f"  └ 🏅 Status: <code>Active Member</code>\n\n"
-    text += "⚡ <i>Live-verified Premium cookies across all services.\nEvery cookie is checked before delivery.</i>\n\n"
-    text += "📌 📌 <b>RULES:</b>\n"
-    text += "  • 📈 3 cookies per tier per hour\n"
-    text += "  • 🔄 Rolling 1-hour window (persists across restarts)\n"
-    text += "  • ❌ Dead cookies are auto-removed\n\n"
-    text += "📊 <b>YOUR REAL-TIME STATUS:</b>\n"
+    text += f"  ├ 🌐 Language: <code>{lang_name}</code>\n"
+    text += f"  └ 🏅 Status: <code>{languages.get_text(lang, 'home_active')}</code>\n\n"
+    text += languages.get_text(lang, "home_live_line") + "\n\n"
+    text += languages.get_text(lang, "home_rules_header") + "\n"
+    text += "  • 📈 " + languages.get_text(lang, "home_rule1") + "\n"
+    text += "  • 🔄 " + languages.get_text(lang, "home_rule2") + "\n"
+    text += "  • ❌ " + languages.get_text(lang, "home_rule3") + "\n\n"
+    text += languages.get_text(lang, "home_status_hdr") + "\n"
     text += "──────────────────────"
 
     tiers = [
@@ -171,25 +173,27 @@ def build_home(chat_id, lang="en"):
             diff = reset_at - now
             m = int(diff.total_seconds() // 60)
             s = int(diff.total_seconds() % 60)
-            resets_str = f"{m}m {s}s"
+            resets_str = languages.get_text(lang, "resets_soon", m=m, s=s)
         else:
-            resets_str = "—"
+            resets_str = languages.get_text(lang, "resets_none")
 
+        oos  = languages.get_text(lang, "home_oos")
+        low  = languages.get_text(lang, "home_low")
         if stock == 0:
-            stock_str = "🔴 Out of Stock"
+            stock_str = f"🔴 {oos}"
         elif stock <= 10:
-            stock_str = f"🟡 {stock} accounts (Low)"
+            stock_str = f"🟡 {stock} accounts ({low})"
         else:
             stock_str = f"🟢 {stock} accounts"
 
         bar = "🟩" * used + "⬜" * (3 - used)
 
         text += f"\n<b>{label}</b>\n"
-        text += f"  ├ 📦 <b>Stock:</b> <code>{stock_str}</code>\n"
-        text += f"  ├ 📈 <b>Usage:</b> <code>{used}/3</code> [{bar}]\n"
-        text += f"  └ 🔄 <b>Reset:</b> <code>{resets_str}</code>\n"
+        text += f"  ├ 📦 Stock: {stock_str}\n"
+        text += f"  ├ 📈 Usage: {used}/3 [{bar}]\n"
+        text += f"  └ 🔄 Reset: {resets_str}\n"
 
-    text += "\n🔽 🔽 <b>CHOOSE A SERVICE BELOW:</b>"
+    text += "\n" + languages.get_text(lang, "home_choose")
     return text, main_menu_markup(lang)
 
 def build_status(chat_id, lang="en"):
@@ -415,11 +419,10 @@ def handle_callback(call):
         user["lang"] = lang_code
         lang         = lang_code
         lang_name    = languages.get_lang_name(lang)
-        # Send confirmation toast then show home
-        edit_current_message(call, f"✅ Language set to {lang_name}")
-        time.sleep(1.5)
         text, markup = build_home(chat_id, lang)
-        edit_current_message(call, text, markup)
+        # Prepend confirmation to the home page text
+        full_text = f"✅ <b>Language set to {lang_name}</b>\n\n" + text
+        edit_current_message(call, full_text, markup)
 
     elif data.startswith("by_country_"):
         # e.g. by_country_netflix — show country usage hint
@@ -455,6 +458,8 @@ def handle_callback(call):
 # ====================== RUN ======================
 if __name__ == "__main__":
     print("🚀 DEADFLIX Bot is running...")
+    bot.delete_webhook(drop_pending_updates=True)
+    bot.get_updates(offset=-1)
     bot.set_my_commands([
         types.BotCommand("start",   "Open the main menu"),
         types.BotCommand("status",  "Check your usage limits"),

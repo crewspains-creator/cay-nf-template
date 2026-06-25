@@ -71,6 +71,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ STANDARD",
         "stock_basic":      "🎯 BASIC",
         "stock_prime":      "🍿 PRIME VIDEO",
+        #home
+        "home_welcome":     "👋 <b>WELCOME, {name}!</b>",
+        "home_profile":     "👤 <b>USER PROFILE:</b>",
+        "home_status_hdr":  "📊 <b>YOUR REAL-TIME STATUS:</b>",
+        "home_choose":      "🔽 🔽 <b>CHOOSE A SERVICE BELOW:</b>",
+        "home_active":      "Active Member",
+        "home_live_line":   "⚡ <i>Live-verified Premium cookies across all services.\nEvery cookie is checked before delivery.</i>",
+        "home_oos":         "Out of Stock",
+        "home_low":         "Low",
     },
 
     "es": {
@@ -136,6 +145,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ ESTÁNDAR",
         "stock_basic":      "🎯 BÁSICO",
         "stock_prime":      "🍿 PRIME VIDEO",
+        #home
+        "home_welcome":     "👋 <b>¡BIENVENIDO, {name}!</b>",
+        "home_profile":     "👤 <b>PERFIL DE USUARIO:</b>",
+        "home_status_hdr":  "📊 <b>TU ESTADO EN TIEMPO REAL:</b>",
+        "home_choose":      "🔽 🔽 <b>ELIGE UN SERVICIO:</b>",
+        "home_active":      "Miembro Activo",
+        "home_live_line":   "⚡ <i>Cookies Premium verificadas en vivo en todos los servicios.\nCada cookie se verifica antes de la entrega.</i>",
+        "home_oos":         "Sin stock",
+        "home_low":         "Bajo",
     },
 
     "fr": {
@@ -201,6 +219,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ STANDARD",
         "stock_basic":      "🎯 BASIQUE",
         "stock_prime":      "🍿 PRIME VIDEO",
+        #home
+        "home_welcome":     "👋 <b>BIENVENUE, {name}!</b>",
+        "home_profile":     "👤 <b>PROFIL UTILISATEUR:</b>",
+        "home_status_hdr":  "📊 <b>VOTRE STATUT EN TEMPS RÉEL:</b>",
+        "home_choose":      "🔽 🔽 <b>CHOISISSEZ UN SERVICE:</b>",
+        "home_active":      "Membre Actif",
+        "home_live_line":   "⚡ <i>Cookies Premium vérifiés en direct sur tous les services.\nChaque cookie est vérifié avant livraison.</i>",
+        "home_oos":         "Rupture de stock",
+        "home_low":         "Faible",
     },
 
     "pt": {
@@ -266,6 +293,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ STANDARD",
         "stock_basic":      "🎯 BÁSICO",
         "stock_prime":      "🍿 PRIME VIDEO",
+        #home
+        "home_welcome":     "👋 <b>BEM-VINDO, {name}!</b>",
+        "home_profile":     "👤 <b>PERFIL DO USUÁRIO:</b>",
+        "home_status_hdr":  "📊 <b>SEU STATUS EM TEMPO REAL:</b>",
+        "home_choose":      "🔽 🔽 <b>ESCOLHA UM SERVIÇO:</b>",
+        "home_active":      "Membro Ativo",
+        "home_live_line":   "⚡ <i>Cookies Premium verificados ao vivo em todos os serviços.\nCada cookie é verificado antes da entrega.</i>",
+        "home_oos":         "Sem estoque",
+        "home_low":         "Baixo",
     },
 
     "ar": {
@@ -331,6 +367,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ ستاندرد",
         "stock_basic":      "🎯 أساسي",
         "stock_prime":      "🍿 PRIME VIDEO",
+        #home
+        "home_welcome":     "👋 <b>مرحباً، {name}!</b>",
+        "home_profile":     "👤 <b>الملف الشخصي:</b>",
+        "home_status_hdr":  "📊 <b>حالتك الآنية:</b>",
+        "home_choose":      "🔽 🔽 <b>اختر خدمة:</b>",
+        "home_active":      "عضو نشط",
+        "home_live_line":   "⚡ <i>كوكيز Premium مُتحقَّق منها مباشرةً عبر جميع الخدمات.\nيتم فحص كل كوكي قبل التسليم.</i>",
+        "home_oos":         "نفد المخزون",
+        "home_low":         "منخفض",
     },
 
     "hi": {
@@ -396,6 +441,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ स्टैंडर्ड",
         "stock_basic":      "🎯 बेसिक",
         "stock_prime":      "🍿 PRIME VIDEO",
+
+        "home_welcome":     "👋 <b>स्वागत है, {name}!</b>",
+        "home_profile":     "👤 <b>उपयोगकर्ता प्रोफ़ाइल:</b>",
+        "home_status_hdr":  "📊 <b>आपकी रियल-टाइम स्थिति:</b>",
+        "home_choose":      "🔽 🔽 <b>नीचे एक सेवा चुनें:</b>",
+        "home_active":      "सक्रिय सदस्य",
+        "home_live_line":   "⚡ <i>सभी सेवाओं में लाइव-वेरिफाइड Premium कुकीज़।\nहर कुकी डिलीवरी से पहले चेक की जाती है।</i>",
+        "home_oos":         "स्टॉक खत्म",
+        "home_low":         "कम",
     },
 
     "id": {
@@ -461,6 +515,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ STANDARD",
         "stock_basic":      "🎯 BASIC",
         "stock_prime":      "🍿 PRIME VIDEO",
+
+        "home_welcome":     "👋 <b>SELAMAT DATANG, {name}!</b>",
+        "home_profile":     "👤 <b>PROFIL PENGGUNA:</b>",
+        "home_status_hdr":  "📊 <b>STATUS REAL-TIME ANDA:</b>",
+        "home_choose":      "🔽 🔽 <b>PILIH LAYANAN:</b>",
+        "home_active":      "Anggota Aktif",
+        "home_live_line":   "⚡ <i>Cookie Premium terverifikasi langsung di semua layanan.\nSetiap cookie dicek sebelum dikirim.</i>",
+        "home_oos":         "Stok habis",
+        "home_low":         "Rendah",
     },
 
     "ru": {
@@ -526,6 +589,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ СТАНДАРТ",
         "stock_basic":      "🎯 БАЗОВЫЙ",
         "stock_prime":      "🍿 PRIME VIDEO",
+
+        "home_welcome":     "👋 <b>ДОБРО ПОЖАЛОВАТЬ, {name}!</b>",
+        "home_profile":     "👤 <b>ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ:</b>",
+        "home_status_hdr":  "📊 <b>ВАШ СТАТУС В РЕАЛЬНОМ ВРЕМЕНИ:</b>",
+        "home_choose":      "🔽 🔽 <b>ВЫБЕРИТЕ СЕРВИС:</b>",
+        "home_active":      "Активный участник",
+        "home_live_line":   "⚡ <i>Живые Premium куки по всем сервисам.\nКаждый куки проверяется перед отправкой.</i>",
+        "home_oos":         "Нет в наличии",
+        "home_low":         "Мало",
     },
 
     "tr": {
@@ -591,6 +663,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ STANDART",
         "stock_basic":      "🎯 TEMEL",
         "stock_prime":      "🍿 PRIME VIDEO",
+
+        "home_welcome":     "👋 <b>HOŞ GELDİNİZ, {name}!</b>",
+        "home_profile":     "👤 <b>KULLANICI PROFİLİ:</b>",
+        "home_status_hdr":  "📊 <b>GERÇEK ZAMANLI DURUMUNUZ:</b>",
+        "home_choose":      "🔽 🔽 <b>HİZMET SEÇİN:</b>",
+        "home_active":      "Aktif Üye",
+        "home_live_line":   "⚡ <i>Tüm hizmetlerde canlı doğrulanmış Premium çerezler.\nHer çerez teslimattan önce kontrol edilir.</i>",
+        "home_oos":         "Stok yok",
+        "home_low":         "Az",
     },
 
     "de": {
@@ -656,6 +737,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ STANDARD",
         "stock_basic":      "🎯 BASIC",
         "stock_prime":      "🍿 PRIME VIDEO",
+
+        "home_welcome":     "👋 <b>WILLKOMMEN, {name}!</b>",
+        "home_profile":     "👤 <b>BENUTZERPROFIL:</b>",
+        "home_status_hdr":  "📊 <b>IHR ECHTZEIT-STATUS:</b>",
+        "home_choose":      "🔽 🔽 <b>DIENST WÄHLEN:</b>",
+        "home_active":      "Aktives Mitglied",
+        "home_live_line":   "⚡ <i>Live-verifizierte Premium-Cookies für alle Dienste.\nJeder Cookie wird vor der Lieferung geprüft.</i>",
+        "home_oos":         "Nicht vorrätig",
+        "home_low":         "Niedrig",
     },
 
     "it": {
@@ -721,6 +811,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ STANDARD",
         "stock_basic":      "🎯 BASE",
         "stock_prime":      "🍿 PRIME VIDEO",
+
+        "home_welcome":     "👋 <b>BENVENUTO, {name}!</b>",
+        "home_profile":     "👤 <b>PROFILO UTENTE:</b>",
+        "home_status_hdr":  "📊 <b>IL TUO STATO IN TEMPO REALE:</b>",
+        "home_choose":      "🔽 🔽 <b>SCEGLI UN SERVIZIO:</b>",
+        "home_active":      "Membro Attivo",
+        "home_live_line":   "⚡ <i>Cookie Premium verificati in tempo reale su tutti i servizi.\nOgni cookie viene verificato prima della consegna.</i>",
+        "home_oos":         "Esaurito",
+        "home_low":         "Basso",
     },
 
     "ja": {
@@ -786,6 +885,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ スタンダード",
         "stock_basic":      "🎯 ベーシック",
         "stock_prime":      "🍿 PRIME VIDEO",
+
+        "home_welcome":     "👋 <b>ようこそ、{name}！</b>",
+        "home_profile":     "👤 <b>ユーザープロフィール：</b>",
+        "home_status_hdr":  "📊 <b>リアルタイムステータス：</b>",
+        "home_choose":      "🔽 🔽 <b>サービスを選択：</b>",
+        "home_active":      "アクティブメンバー",
+        "home_live_line":   "⚡ <i>全サービスでリアルタイム検証済みのPremiumクッキー。\nすべてのクッキーは配信前に確認されます。</i>",
+        "home_oos":         "在庫切れ",
+        "home_low":         "少ない",
     },
 
     "ko": {
@@ -851,6 +959,15 @@ LANGUAGES = {
         "stock_standard":   "⭐ 스탠다드",
         "stock_basic":      "🎯 베이직",
         "stock_prime":      "🍿 PRIME VIDEO",
+
+        "home_welcome":     "👋 <b>환영합니다, {name}!</b>",
+        "home_profile":     "👤 <b>사용자 프로필:</b>",
+        "home_status_hdr":  "📊 <b>실시간 현황:</b>",
+        "home_choose":      "🔽 🔽 <b>서비스 선택:</b>",
+        "home_active":      "활성 회원",
+        "home_live_line":   "⚡ <i>모든 서비스의 실시간 인증 Premium 쿠키.\n모든 쿠키는 배달 전에 확인됩니다.</i>",
+        "home_oos":         "재고 없음",
+        "home_low":         "낮음",
     },
 }
 
