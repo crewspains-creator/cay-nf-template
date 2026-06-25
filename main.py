@@ -1,6 +1,7 @@
 import telebot
 from telebot import types
 import time
+import languages
 from datetime import datetime, timedelta
 
 # ====================== CONFIG ======================
@@ -19,7 +20,8 @@ def get_user_data(chat_id):
     if chat_id not in USER_DATA:
         USER_DATA[chat_id] = {
             "used": {"premium": 0, "standard": 0, "basic": 0, "prime": 0},
-            "last_reset": datetime.now()
+            "last_reset": datetime.now(),
+            "lang": "en"
         }
     if datetime.now() - USER_DATA[chat_id]["last_reset"] > timedelta(hours=1):
         USER_DATA[chat_id]["used"] = {"premium": 0, "standard": 0, "basic": 0, "prime": 0}
@@ -27,11 +29,11 @@ def get_user_data(chat_id):
     return USER_DATA[chat_id]
 
 # ====================== KEYBOARDS ======================
-def main_menu_markup():
+def main_menu_markup(lang="en"):
     markup = types.InlineKeyboardMarkup(row_width=3)
     markup.add(
-        types.InlineKeyboardButton("🎬 Netflix", callback_data="netflix"),
-        types.InlineKeyboardButton("🍿 Prime Video", callback_data="prime")
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_netflix"), callback_data="netflix"),
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_prime"), callback_data="prime")
     )
     markup.add(
         types.InlineKeyboardButton("📊 Status", callback_data="status"),
@@ -203,10 +205,12 @@ def handle_callback(call):
         edit_current_message(call, WELCOME_TEXT, main_menu_markup())
 
     elif data == "netflix":
-        edit_current_message(call, "🔽 Choose a tier for <b>Netflix</b>:", netflix_tier_markup())
+        lang = user["lang"]
+        edit_current_message(call, languages.get_text(lang, "choose_netflix"), netflix_tier_markup(lang))
 
     elif data == "prime":
-        edit_current_message(call, "🔽 Choose a tier for <b>PrimeVideo</b>:", prime_tier_markup())
+        lang = user["lang"]
+        edit_current_message(call, languages.get_text(lang, "choose_netflix"), netflix_tier_markup(lang))
 
     elif data.startswith("tier_"):
         tier = data.split("_")[1]
@@ -269,7 +273,10 @@ def handle_callback(call):
         edit_current_message(call, text, markup)
 
     elif data.startswith("lang_"):
-        edit_current_message(call, WELCOME_TEXT, main_menu_markup())
+        lang_code = data.split("_")[1]
+        user["lang"] = lang_code
+        lang = user["lang"]
+        edit_current_message(call, languages.get_text(lang, "welcome"), main_menu_markup(lang))
 
     bot.answer_callback_query(call.id)
 
