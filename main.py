@@ -144,10 +144,10 @@ def build_home(chat_id, lang="en"):
 
     text  = languages.get_text(lang, "home_welcome", name=name.upper()) + "\n"
     text += languages.get_text(lang, "home_profile") + "\n"
-    text += f"  ├ 📛 Name: <code>{name}</code>\n"
-    text += f"  ├ 🆔 User ID: <code>{chat_id}</code>\n"
-    text += f"  ├ 🌐 Language: <code>{lang_name}</code>\n"
-    text += f"  └ 🏅 Status: <code>{languages.get_text(lang, 'home_active')}</code>\n\n"
+    text += f"  ├ 📛 <b>Name:</b> <code>{name}</code>\n"
+    text += f"  ├ 🆔 <b>User ID:</b> <code>{chat_id}</code>\n"
+    text += f"  ├ 🌐 <b>Language:</b> <code>{lang_name}</code>\n"
+    text += f"  └ 🏅 <b>Status:</b> <code>{languages.get_text(lang, 'home_active')}</code>\n\n"
     text += languages.get_text(lang, "home_live_line") + "\n\n"
     text += languages.get_text(lang, "home_rules_header") + "\n"
     text += "  • 📈 " + languages.get_text(lang, "home_rule1") + "\n"
@@ -189,9 +189,9 @@ def build_home(chat_id, lang="en"):
         bar = "🟩" * used + "⬜" * (3 - used)
 
         text += f"\n<b>{label}</b>\n"
-        text += f"  ├ 📦 Stock: {stock_str}\n"
-        text += f"  ├ 📈 Usage: {used}/3 [{bar}]\n"
-        text += f"  └ 🔄 Reset: {resets_str}\n"
+        text += f"  ├ 📦 <b>Stock:</b> <code>{stock_str}</code>\n"
+        text += f"  ├ 📈 <b>Usage:</b> <code>{used}/3</code> [{bar}]\n"
+        text += f"  └ 🔄 <b>Reset:</b> <code>{resets_str}</code>\n"
 
     text += "\n" + languages.get_text(lang, "home_choose")
     return text, main_menu_markup(lang)
