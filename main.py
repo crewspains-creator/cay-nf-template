@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 
 # ====================== CONFIG ======================
-TOKEN = "8863877477:AAFRqgyvR8tR61PqR3Lud1_ghxBPQA8e-ug"  # ← Change this
+TOKEN = "8863877477:AAEEW9DN1cP8GWkpiSENJA-56A1viiU28Yw"  # ← Change this
 bot = telebot.TeleBot(TOKEN)
 
 # In-memory storage (replace with SQLite/Redis later)
