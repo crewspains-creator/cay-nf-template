@@ -110,15 +110,16 @@ def handle_callback(call):
     if data == "main_menu":
         welcome_text = """👋 <b>WELCOME, CAY!</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
+
 ⚡ Live-verified Netflix cookies across 3 tiers.
 Every cookie is checked before delivery.
 
-📌📌 <b>RULES:</b>
+📌 📌 <b>RULES:</b>
   • 📈 3 cookies per tier per hour
-  • 🕒 Rolling 1-hour window (persists across restarts)
+  • ⏱️ Rolling 1-hour window (persists across restarts)
   • ❌ Dead cookies are auto-removed
 
-⬇️⬇️ <b>CHOOSE A SERVICE BELOW:</b>"""
+🔽 🔽 <b>CHOOSE A SERVICE BELOW:</b>"""
         edit_current_message(call, welcome_text, main_menu_markup())
 
     elif data == "netflix":
@@ -269,15 +270,16 @@ Use responsibly!"""
         # Language selected — store preference and return to main menu
         welcome_text = """👋 <b>WELCOME, CAY!</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
+
 ⚡ Live-verified Netflix cookies across 3 tiers.
 Every cookie is checked before delivery.
 
-📌📌 <b>RULES:</b>
+📌 📌 <b>RULES:</b>
   • 📈 3 cookies per tier per hour
-  • 🕒 Rolling 1-hour window (persists across restarts)
+  • ⏱️ Rolling 1-hour window (persists across restarts)
   • ❌ Dead cookies are auto-removed
 
-⬇️⬇️ <b>CHOOSE A SERVICE BELOW:</b>"""
+🔽 🔽 <b>CHOOSE A SERVICE BELOW:</b>"""
         edit_current_message(call, welcome_text, main_menu_markup())
 
     bot.answer_callback_query(call.id)
