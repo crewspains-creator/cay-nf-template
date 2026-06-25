@@ -186,7 +186,7 @@ Use responsibly!"""
                 f"  📈 Used: {used}/3\n"
                 f"  🔄 Left: {left}\n"
                 f"  📦 Stock: {stock}\n"
-                f"  🕐 Resets: {resets_str}\n\n"
+                f"  🕐 Resets: {resets_str}\n"
             )
         status_text += "💡 <i>Limits reset on a rolling basis every hour.</i>"
 
@@ -197,7 +197,7 @@ Use responsibly!"""
         edit_current_message(call, status_text, markup)
 
     elif data == "stock":
-        stock_text = "📦📦 <b>COOKIE STOCK</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        stock_text = "📦 📦 <b>COOKIE STOCK</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         tiers = [
             ("premium", "👑 PREMIUM"),
             ("standard", "⭐ STANDARD"),
@@ -206,7 +206,7 @@ Use responsibly!"""
         ]
         for t, name in tiers:
             count = STOCK[t]
-            bar = "▰▰▰▰▰▰▰▰▰▰"
+            bar = "🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩"
             stock_text += f"<b>{name}:</b> {count} accounts\n{bar}\n\n"
 
         markup = types.InlineKeyboardMarkup()
@@ -216,7 +216,7 @@ Use responsibly!"""
         edit_current_message(call, stock_text, markup)
 
     elif data == "help":
-        help_text = """ℹ️ℹ️ <b>HOW TO USE</b>
+        help_text = """ℹ️ ℹ️ <b>HOW TO USE</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
 
 1️⃣  Choose a tier from the main menu
@@ -224,13 +224,10 @@ Use responsibly!"""
 3️⃣  Import the cookie into your browser
 4️⃣  Use the NFToken link to watch directly
 
-🗂🗂 <b>TIERS:</b>
-👑 Premium — Full 4K, up to 4 screens
-⭐ Standard — 1080p HD, up to 2 screens
-🎯 Basic/Mobile — 720p, 1 screen
-
-🖊 <b>BROWSER EXTENSION:</b>
-• <a href="https://t.me/deadflix">Deadflix Extension (Plug &amp; Play)</a>
+📁 📁 <b>TIERS:</b>
+ 👑 Premium — Full 4K, up to 4 screens
+ ⭐ Standard — 1080p HD, up to 2 screens
+ 🎯 Basic/Mobile — 720p, 1 screen
 
 💡 <i>Use cookies responsibly.</i>"""
 
