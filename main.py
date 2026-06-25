@@ -414,6 +414,10 @@ def handle_callback(call):
         lang_code    = data.split("_", 1)[1]
         user["lang"] = lang_code
         lang         = lang_code
+        lang_name    = languages.get_lang_name(lang)
+        # Send confirmation toast then show home
+        edit_current_message(call, f"✅ Language set to {lang_name}")
+        time.sleep(1.5)
         text, markup = build_home(chat_id, lang)
         edit_current_message(call, text, markup)
 
