@@ -198,7 +198,10 @@ def build_home(chat_id, lang="en"):
         else:
             stock_str = f"🟢 {stock} accounts"
 
-        bar = "🟩" * used + "⬜" * (3 - used)
+        if used >= 3:
+            bar = "🔴🔴🔴"
+        else:
+            bar = "🟩" * used + "⬜" * (3 - used)
 
         text += f"\n<b>{label}</b>\n"
         text += f"  ├ 📦 <b>Stock:</b> <code>{stock_str}</code>\n"
