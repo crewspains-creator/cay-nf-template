@@ -130,6 +130,18 @@ def country_service_markup(country):
     markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
     return markup
 
+def get_service_info(tier):
+    """Return (emoji, service_name) for a given tier key."""
+    mapping = {
+        "premium":     ("🎬", "NETFLIX"),
+        "standard":    ("🎬", "NETFLIX"),
+        "basic":       ("🎬", "NETFLIX"),
+        "prime":       ("🍿", "PRIME VIDEO"),
+        "crunchyroll": ("🦊", "CRUNCHYROLL"),
+        "spotify":     ("🎵", "SPOTIFY"),
+    }
+    return mapping.get(tier, ("🔑", tier.upper()))
+
 # ====================== BUILD FUNCTIONS ======================
 def build_home(chat_id, lang="en"):
     user = get_user_data(chat_id)
@@ -370,16 +382,19 @@ def handle_callback(call):
     elif data.startswith("tier_"):
         tier = data.split("_", 1)[1]
         back_markup, back_label = get_back_markup(tier, lang)
+        emoji, service_name = get_service_info(tier)
 
+        # ── IMAGE 1: no stock in this tier ──
         if STOCK.get(tier, 0) <= 0:
-            edit_current_message(call, languages.get_text(lang, "out_of_stock"))
-            time.sleep(1.5)
-            # back_label is either a lang key string or a raw HTML string
-            if back_label.startswith("choose_"):
-                label_text = languages.get_text(lang, back_label)
-            else:
-                label_text = back_label
-            edit_current_message(call, label_text, back_markup)
+            no_stock_text = (
+                f"❌ 😔 <b>{service_name} — NO LIVE COOKIES</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"⚠️ <i>All cookies in this tier have expired.\n"
+                f"Try another tier or check back later.</i>"
+            )
+            no_stock_markup = types.InlineKeyboardMarkup()
+            no_stock_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+            edit_current_message(call, no_stock_text, no_stock_markup)
             return
 
         if user["used"].get(tier, 0) >= 3:
@@ -391,6 +406,19 @@ def handle_callback(call):
                 label_text = back_label
             edit_current_message(call, label_text, back_markup)
             return
+
+        # ── IMAGE 2: verifying cookie ──
+        tier_label = tier.upper()
+        verifying_text = (
+            f"⏳ 🔍 <b>VERIFYING {service_name} COOKIE...</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"📡 <b>STATUS:</b> <code>CHECKING THAT THE SESSION IS STILL LIVE...</code>\n"
+            f"⚡ <b>SERVICE:</b> <code>{service_name}</code>\n"
+            f"⚙️ <b>METHOD:</b> <code>Automated Session Validation</code>\n\n"
+            f"🕐 <i>Please wait while we establish a live connection...</i>"
+        )
+        edit_current_message(call, verifying_text)
+        time.sleep(2)
 
         user["used"][tier] += 1
         STOCK[tier] = max(0, STOCK[tier] - 1)
