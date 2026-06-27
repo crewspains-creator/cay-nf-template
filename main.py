@@ -142,6 +142,17 @@ def get_service_info(tier):
     }
     return mapping.get(tier, ("🔑", tier.upper()))
 
+def get_prime_filename():
+    """Return a fake-realistic Prime cookie filename for display."""
+    import random
+    samples = [
+        "[Primevideo][gianluca][IT][Tested By hydrax001_Software].txt",
+        "[Primevideo][marcos][BR][Tested By hydrax001_Software].txt",
+        "[Primevideo][john][US][Tested By hydrax001_Software].txt",
+        "[Primevideo][akira][JP][Tested By hydrax001_Software].txt",
+    ]
+    return random.choice(samples)
+
 # ====================== BUILD FUNCTIONS ======================
 def build_home(chat_id, lang="en"):
     user = get_user_data(chat_id)
@@ -429,11 +440,67 @@ def handle_callback(call):
         edit_current_message(call, verifying_text)
         time.sleep(2)
 
-        user["used"][tier] += 1
+        user[."used"][tier] += 1
         STOCK[tier] = max(0, STOCK[tier] - 1)
-        url = f"https://example.com/nftoken/{tier}-{int(time.time())}"
-        delivery_text = languages.get_text(lang, "cookie_delivered", tier=tier.upper(), url=url)
-        edit_current_message(call, delivery_text, main_menu_markup(lang))
+
+        if tier == "prime":
+            filename = get_prime_filename()
+            used_now = user["used"][tier]
+            remaining = max(0, 3 - used_now)
+
+            # ── Step 2: delivery message (verifying above already ran) ──
+            delivery_text = (
+                f"🎉 🍿 <b>PRIME VIDEO COOKIE — ✅ LIVE</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>\n"
+                f"📊 <b>HOURLY LIMIT:</b> <code>{used_now} / 3</code>\n"
+                f"🔒 <b>REMAINING SLOTS:</b> <code>{remaining} claims left</code>\n"
+                f"⏱ <b>COOLDOWN PERIOD:</b> <code>1 hour rolling</code>\n\n"
+                f"📤 <b>STATUS:</b> Session verified & active! Cookies sent below."
+            )
+            prime_markup = types.InlineKeyboardMarkup()
+            prime_markup.add(types.InlineKeyboardButton("🔄 Get Another Prime Video", callback_data="tier_prime"))
+            prime_markup.add(types.InlineKeyboardButton("🔌 Deadflix Extension ↗", url="https://deadflix.com/extension"))
+            prime_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+            edit_current_message(call, delivery_text, prime_markup)
+
+            # ── Step 3: Send cookie file ──
+            import io
+            file_content = f"# Prime Video Cookie\n# File: {filename}\n# Generated: {datetime.now()}\n\nCOOKIE_PLACEHOLDER"
+            file_bytes = io.BytesIO(file_content.encode())
+            file_bytes.name = filename
+            caption_text = (
+                f"🍿 <b>Prime Video Cookies</b>\n\n"
+                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>"
+            )
+            bot.send_document(chat_id, file_bytes, caption=caption_text, parse_mode="HTML")
+
+            # ── Step 4: Retrieving details ──
+            retrieving_msg = bot.send_message(
+                chat_id,
+                f"🔍 <b>Retrieving details:</b> <code>[Connecting to Prime Video]</code> ⏳",
+                parse_mode="HTML"
+            )
+            time.sleep(2)
+
+            # ── Step 5: Account details ──
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=retrieving_msg.message_id,
+                text=(
+                    f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"👤 <b>USERNAME:</b> <code>N/A</code>\n"
+                    f"🌍 <b>REGION:</b> <code>N/A</code>\n"
+                    f"🟢 <b>STATUS:</b> <code>Active</code>"
+                ),
+                parse_mode="HTML"
+            )
+
+        else:
+            url = f"https://example.com/nftoken/{tier}-{int(time.time())}"
+            delivery_text = languages.get_text(lang, "cookie_delivered", tier=tier.upper(), url=url)
+            edit_current_message(call, delivery_text, main_menu_markup(lang))
 
     elif data == "status":
         text, markup = build_status(chat_id, lang)
