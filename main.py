@@ -400,16 +400,28 @@ def handle_callback(call):
             edit_current_message(call, no_stock_text, no_stock_markup)
             return
 
-        if user["used"].get(tier, 0) >= 3:
-            edit_current_message(call, languages.get_text(lang, "hourly_limit"))
-            time.sleep(1.5)
-            if back_label.startswith("choose_"):
-                label_text = languages.get_text(lang, back_label)
-            else:
-                label_text = back_label
-            edit_current_message(call, label_text, back_markup)
-            return
+         if user["used"].get(tier, 0) >= 3:
+            # Calculate reset time
+            reset_at = user["last_reset"] + timedelta(hours=1)
+            now = datetime.now()
+            diff = reset_at - now
+            m = int(diff.total_seconds() // 60)
+            s = int(diff.total_seconds() % 60)
 
+            emoji, service_name = get_service_info(tier)
+            limit_text = (
+                f"⏳ ⏳ <b>LIMIT REACHED — {service_name}</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"⚠️ <b>STATUS:</b> <code>YOU'VE USED 3/3 COOKIES THIS HOUR.</code>\n"
+                f"🕐 <b>COOLDOWN:</b> 🕐 <code>RESETS IN: {m}M {s}S</code>\n\n"
+                f"💡 <i>Hourly limits help protect our cookie database from abuse. Please try again later.</i>"
+            )
+            limit_markup = types.InlineKeyboardMarkup()
+            limit_markup.add(types.InlineKeyboardButton("📊 Status", callback_data="status"))
+            limit_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+            edit_current_message(call, limit_text, limit_markup)
+            return
+        
         # ── IMAGE 2: verifying cookie ──
         tier_label = tier.upper()
         verifying_text = (
