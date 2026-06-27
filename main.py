@@ -387,7 +387,6 @@ def handle_callback(call):
         back_markup, back_label = get_back_markup(tier, lang)
         emoji, service_name = get_service_info(tier)
 
-        # ── IMAGE 1: no stock in this tier ──
         if STOCK.get(tier, 0) <= 0:
             no_stock_text = (
                 f"❌ 😔 <b>{service_name} — NO LIVE COOKIES</b>\n"
@@ -400,15 +399,12 @@ def handle_callback(call):
             edit_current_message(call, no_stock_text, no_stock_markup)
             return
 
-         if user["used"].get(tier, 0) >= 3:
-            # Calculate reset time
+        if user["used"].get(tier, 0) >= 3:
             reset_at = user["last_reset"] + timedelta(hours=1)
             now = datetime.now()
             diff = reset_at - now
             m = int(diff.total_seconds() // 60)
             s = int(diff.total_seconds() % 60)
-
-            emoji, service_name = get_service_info(tier)
             limit_text = (
                 f"⏳ ⏳ <b>LIMIT REACHED — {service_name}</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -421,9 +417,7 @@ def handle_callback(call):
             limit_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
             edit_current_message(call, limit_text, limit_markup)
             return
-        
-        # ── IMAGE 2: verifying cookie ──
-        tier_label = tier.upper()
+
         verifying_text = (
             f"⏳ 🔍 <b>VERIFYING {service_name} COOKIE...</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
