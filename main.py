@@ -181,7 +181,7 @@ def build_home(chat_id, lang="en"):
         stock = STOCK.get(t, 0)
         reset_at = user["last_reset"] + timedelta(hours=1)
         now = datetime.now()
-        if used > 0 and now < reset_at:
+        if used >= 3 and now < reset_at:
             diff = reset_at - now
             m = int(diff.total_seconds() // 60)
             s = int(diff.total_seconds() % 60)
@@ -225,7 +225,7 @@ def build_status(chat_id, lang="en"):
         stock = STOCK.get(t, 0)
         reset_at = user["last_reset"] + timedelta(hours=1)
         now = datetime.now()
-        if used > 0 and now < reset_at:
+        if used >= 3 and now < reset_at:
             diff = reset_at - now
             m = int(diff.total_seconds() // 60)
             s = int(diff.total_seconds() % 60)
