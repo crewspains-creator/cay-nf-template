@@ -439,8 +439,8 @@ def handle_callback(call):
         )
         edit_current_message(call, verifying_text)
         time.sleep(2)
-
-        user[."used"][tier] += 1
+        
+        user["used"][tier] += 1
         STOCK[tier] = max(0, STOCK[tier] - 1)
 
         if tier == "prime":
