@@ -153,6 +153,17 @@ def get_prime_filename():
     ]
     return random.choice(samples)
 
+def get_spotify_filename():
+    """Return a fake-realistic Spotify cookie filename for display."""
+    import random
+    samples = [
+        "[Premium][1 payments][extra Recurring][IN][omkshirsagar7666@gmail.com][Tested By hydrax001_Software].txt",
+        "[Family Premium][1 payments][extra Single Payment][GB][monkmoley@gmail.com][Tested By hydrax001_Software].txt",
+        "[Premium][1 payments][extra Recurring][US][johnsmith99@gmail.com][Tested By hydrax001_Software].txt",
+        "[Family Premium][1 payments][extra Single Payment][BR][marcos.silva@gmail.com][Tested By hydrax001_Software].txt",
+    ]
+    return random.choice(samples)
+
 # ====================== BUILD FUNCTIONS ======================
 def build_home(chat_id, lang="en"):
     user = get_user_data(chat_id)
@@ -210,7 +221,7 @@ def build_home(chat_id, lang="en"):
             stock_str = f"🟢 {stock} accounts"
 
         if used >= 3:
-            bar = "🔴🔴🔴"
+            bar = "🟥🟥🟥"
         else:
             bar = "🟩" * used + "⬜" * (3 - used)
 
@@ -497,11 +508,64 @@ def handle_callback(call):
                 parse_mode="HTML"
             )
 
+        elif tier == "spotify":
+            import io, re
+            filename = get_spotify_filename()
+            used_now = user["used"][tier]
+            remaining = max(0, 3 - used_now)
+
+            username_match = re.search(r'\[([^\]]+@[^\]]+)\]', filename)
+            username = username_match.group(1).split("@")[0] if username_match else "N/A"
+            spotify_tier_name = "Spotify Premium Family" if "Family" in filename else "Spotify Premium"
+
+            delivery_text = (
+                f"🎉 🎵 <b>SPOTIFY COOKIE — ✅ LIVE</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>\n"
+                f"📊 <b>HOURLY LIMIT:</b> <code>{used_now} / 3</code>\n"
+                f"🔒 <b>REMAINING SLOTS:</b> <code>{remaining} claims left</code>\n"
+                f"⏱ <b>COOLDOWN PERIOD:</b> <code>1 hour rolling</code>\n\n"
+                f"📤 <b>STATUS:</b> Session verified & active! Cookies sent below."
+            )
+            spotify_markup = types.InlineKeyboardMarkup()
+            spotify_markup.add(types.InlineKeyboardButton("🔄 Get Another Spotify", callback_data="tier_spotify"))
+            spotify_markup.add(types.InlineKeyboardButton("🔌 Deadflix Extension ↗", url="https://deadflix.com/extension"))
+            spotify_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+            edit_current_message(call, delivery_text, spotify_markup)
+
+            file_content = f"# Spotify Cookie\n# File: {filename}\n# Generated: {datetime.now()}\n\nCOOKIE_PLACEHOLDER"
+            file_bytes = io.BytesIO(file_content.encode())
+            file_bytes.name = filename
+            bot.send_document(chat_id, file_bytes, caption=(
+                f"🎵 <b>Spotify Cookies</b>\n\n"
+                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>"
+            ), parse_mode="HTML")
+
+            retrieving_msg = bot.send_message(
+                chat_id,
+                f"🔍 <b>Retrieving details:</b> <code>[Connecting to Spotify]</code> ⏳",
+                parse_mode="HTML"
+            )
+            time.sleep(2)
+
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=retrieving_msg.message_id,
+                text=(
+                    f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"👤 <b>USERNAME:</b> <code>{username}</code>\n"
+                    f"👑 <b>TIER:</b> <code>{spotify_tier_name}</code>\n"
+                    f"🌍 <b>REGION:</b> <code>N/A</code>\n"
+                    f"🟢 <b>STATUS:</b> <code>Active</code>"
+                ),
+                parse_mode="HTML"
+            )
+
         else:
             url = f"https://example.com/nftoken/{tier}-{int(time.time())}"
             delivery_text = languages.get_text(lang, "cookie_delivered", tier=tier.upper(), url=url)
             edit_current_message(call, delivery_text, main_menu_markup(lang))
-
     elif data == "status":
         text, markup = build_status(chat_id, lang)
         edit_current_message(call, text, markup)
