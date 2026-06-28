@@ -28,7 +28,10 @@ def get_user_data(chat_id):
                 "premium": 0, "standard": 0, "basic": 0,
                 "prime": 0, "crunchyroll": 0, "spotify": 0
             },
-            "last_reset": datetime.now(),
+            "tier_reset": {
+                "premium": None, "standard": None, "basic": None,
+                "prime": None, "crunchyroll": None, "spotify": None
+            },
             "lang": "en"
         }
     data = USER_DATA[chat_id]
@@ -36,12 +39,18 @@ def get_user_data(chat_id):
     for key in ("crunchyroll", "spotify"):
         if key not in data["used"]:
             data["used"][key] = 0
-    if datetime.now() - data["last_reset"] > timedelta(hours=1):
-        data["used"] = {
-            "premium": 0, "standard": 0, "basic": 0,
-            "prime": 0, "crunchyroll": 0, "spotify": 0
-        }
-        data["last_reset"] = datetime.now()
+        if key not in data.get("tier_reset", {}):
+            data.setdefault("tier_reset", {})[key] = None
+    if "tier_reset" not in data:
+        data["tier_reset"] = {k: None for k in data["used"]}
+
+    # Auto-reset each tier independently
+    now = datetime.now()
+    for t in data["used"]:
+        reset_at = data["tier_reset"].get(t)
+        if reset_at and now >= reset_at:
+            data["used"][t] = 0
+            data["tier_reset"][t] = None
     return data
 
 # ====================== KEYBOARDS ======================
@@ -214,9 +223,9 @@ def build_home(chat_id, lang="en"):
     for t, label in tiers:
         used  = user["used"].get(t, 0)
         stock = STOCK.get(t, 0)
-        reset_at = user["last_reset"] + timedelta(hours=1)
+        reset_at = user["tier_reset"].get(t)
         now = datetime.now()
-        if used >= 3 and now < reset_at:
+        if used >= 3 and reset_at and now < reset_at:
             diff = reset_at - now
             m = int(diff.total_seconds() // 60)
             s = int(diff.total_seconds() % 60)
@@ -261,9 +270,9 @@ def build_status(chat_id, lang="en"):
         used  = user["used"].get(t, 0)
         left  = max(0, 3 - used)
         stock = STOCK.get(t, 0)
-        reset_at = user["last_reset"] + timedelta(hours=1)
+        reset_at = user["tier_reset"].get(t)
         now = datetime.now()
-        if used >= 3 and now < reset_at:
+        if used >= 3 and reset_at and now < reset_at:
             diff = reset_at - now
             m = int(diff.total_seconds() // 60)
             s = int(diff.total_seconds() % 60)
