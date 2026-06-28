@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 TOKEN = "8863877477:AAEEW9DN1cP8GWkpiSENJA-56A1viiU28Yw"
 bot = telebot.TeleBot(TOKEN)
 
+ADMIN_IDS = [7399488750]
+ADMIN_PENDING = {}
+
 USER_DATA = {}
 STOCK = {
     "premium":     596,
@@ -339,6 +342,24 @@ def get_back_markup(tier, lang):
     else:
         return netflix_tier_markup(lang), "choose_netflix"
 
+def admin_stock_markup():
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton(f"🔥 Premium ({STOCK['premium']})",     callback_data="admin_set_premium"),
+        types.InlineKeyboardButton(f"⭐ Standard ({STOCK['standard']})",    callback_data="admin_set_standard"),
+    )
+    markup.add(
+        types.InlineKeyboardButton(f"🎯 Basic ({STOCK['basic']})",          callback_data="admin_set_basic"),
+        types.InlineKeyboardButton(f"🍿 Prime ({STOCK['prime']})",          callback_data="admin_set_prime"),
+    )
+    markup.add(
+        types.InlineKeyboardButton(f"🦊 Crunchyroll ({STOCK['crunchyroll']})", callback_data="admin_set_crunchyroll"),
+        types.InlineKeyboardButton(f"🎵 Spotify ({STOCK['spotify']})",      callback_data="admin_set_spotify"),
+    )
+    markup.add(types.InlineKeyboardButton("🔄 Reset All to 0", callback_data="admin_reset_all"))
+    markup.add(types.InlineKeyboardButton("🏠 Main Menu",       callback_data="main_menu"))
+    return markup
+
 # ====================== COMMANDS ======================
 @bot.message_handler(commands=['start'])
 def start_command(message):
@@ -379,6 +400,19 @@ def country_handler(message):
         text  = "🌍 <b>Get Cookies by Country</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         text += "Use: /country IN\nExamples: IN · US · BR · FR · DE · ID"
         bot.reply_to(message, text, parse_mode="HTML")
+
+@bot.message_handler(commands=['admin'])
+def admin_command(message):
+    if message.chat.id not in ADMIN_IDS:
+        bot.reply_to(message, "⛔ Unauthorized.")
+        return
+    text = (
+        "🛠 <b>ADMIN PANEL — STOCK MANAGER</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Tap a service to set its stock count.\n"
+        "Current values shown in brackets."
+    )
+    bot.send_message(message.chat.id, text, reply_markup=admin_stock_markup(), parse_mode="HTML")
 
 # ====================== CALLBACKS ======================
 @bot.callback_query_handler(func=lambda call: True)
@@ -629,6 +663,7 @@ if __name__ == "__main__":
     bot.get_updates(offset=-1)
     bot.set_my_commands([
         types.BotCommand("start",   "Open the main menu"),
+        types.BotCommand("admin",   "Admin panel (owner only)"),
         types.BotCommand("status",  "Check your usage limits"),
         types.BotCommand("stock",   "View available cookie stock"),
         types.BotCommand("country", "Get cookies for a specific country"),
