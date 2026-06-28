@@ -414,6 +414,28 @@ def admin_command(message):
     )
     bot.send_message(message.chat.id, text, reply_markup=admin_stock_markup(), parse_mode="HTML")
 
+@bot.message_handler(func=lambda m: m.chat.id in ADMIN_IDS and m.chat.id in ADMIN_PENDING)
+def admin_set_stock_value(message):
+    chat_id = message.chat.id
+    tier = ADMIN_PENDING.pop(chat_id, None)
+    if not tier:
+        return
+    try:
+        value = int(message.text.strip())
+        if value < 0:
+            raise ValueError
+        STOCK[tier] = value
+        text = (
+            f"✅ <b>Stock updated!</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"<b>{tier.upper()}</b> → <code>{value}</code> accounts\n\n"
+            f"Tap a service to update another."
+        )
+        bot.send_message(chat_id, text, reply_markup=admin_stock_markup(), parse_mode="HTML")
+    except ValueError:
+        bot.send_message(chat_id, "❌ Invalid number. Send a whole number like <code>150</code>.", parse_mode="HTML")
+        ADMIN_PENDING[chat_id] = tier  # re-prompt
+
 # ====================== CALLBACKS ======================
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
@@ -624,6 +646,26 @@ def handle_callback(call):
         edit_current_message(call, f"✅ <b>Language set to {lang_name}</b>")
         time.sleep(0.8)
         bot.send_message(chat_id, text, reply_markup=markup, parse_mode="HTML")
+
+    elif data.startswith("admin_set_") and chat_id in ADMIN_IDS:
+        tier = data.replace("admin_set_", "")
+        ADMIN_PENDING[chat_id] = tier
+        bot.send_message(
+            chat_id,
+            f"✏️ <b>Set stock for <code>{tier.upper()}</code></b>\n\n"
+            f"Current value: <code>{STOCK.get(tier, 0)}</code>\n"
+            f"Send the new number now:",
+            parse_mode="HTML"
+        )
+
+    elif data == "admin_reset_all" and chat_id in ADMIN_IDS:
+        for key in STOCK:
+            STOCK[key] = 0
+        edit_current_message(
+            call,
+            "✅ <b>All stocks reset to 0.</b>",
+            admin_stock_markup()
+        )
 
     elif data.startswith("by_country_"):
         # e.g. by_country_netflix — show country usage hint
