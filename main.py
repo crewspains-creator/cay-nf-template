@@ -496,9 +496,9 @@ def handle_callback(call):
             return
 
         if user["used"].get(tier, 0) >= 3:
-            reset_at = user["last_reset"] + timedelta(hours=1)
+            reset_at = user["tier_reset"].get(tier)
             now = datetime.now()
-            diff = reset_at - now
+            diff = (reset_at - now) if reset_at else timedelta(hours=1)
             m = int(diff.total_seconds() // 60)
             s = int(diff.total_seconds() % 60)
             limit_text = (
@@ -528,6 +528,11 @@ def handle_callback(call):
         user["used"][tier] += 1
         STOCK[tier] = max(0, STOCK[tier] - 1)
 
+        # Start this tier's 1hr timer only when it hits 3
+        if user["used"][tier] >= 3:
+            user["tier_reset"][tier] = datetime.now() + timedelta(hours=1)
+
+        
         if tier == "prime":
             filename = get_prime_filename()
             used_now = user["used"][tier]
