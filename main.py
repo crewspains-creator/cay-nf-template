@@ -167,6 +167,16 @@ def get_spotify_filename():
     ]
     return random.choice(samples)
 
+def get_netflix_filename():
+    import random
+    samples = [
+        "[Premium][1 payments][extra Yes][IT][roberta3alb@gmail.com][Tested By hydrax001_Software].txt",
+        "[Premium][1 payments][extra Yes][US][johnsmith99@gmail.com][Tested By hydrax001_Software].txt",
+        "[Standard][1 payments][extra No][BR][marcos.silva@gmail.com][Tested By hydrax001_Software].txt",
+        "[Basic][1 payments][extra No][DE][hans.mueller@gmail.com][Tested By hydrax001_Software].txt",
+    ]
+    return random.choice(samples)
+
 # ====================== BUILD FUNCTIONS ======================
 def build_home(chat_id, lang="en"):
     user = get_user_data(chat_id)
