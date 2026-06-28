@@ -692,7 +692,6 @@ def handle_callback(call):
             # ── Send cookie details as code message ──
             bot.send_message(
                 chat_id,
-                f"🎬 <b>Netflix Cookies</b>\n\n"
                 f"<pre>{file_content}</pre>",
                 parse_mode="HTML"
             )
