@@ -471,7 +471,6 @@ def handle_callback(call):
             )
             prime_markup = types.InlineKeyboardMarkup()
             prime_markup.add(types.InlineKeyboardButton("🔄 Get Another Prime Video", callback_data="tier_prime"))
-            prime_markup.add(types.InlineKeyboardButton("🔌 Deadflix Extension ↗", url="https://deadflix.com/extension"))
             prime_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
             edit_current_message(call, delivery_text, prime_markup)
 
@@ -529,7 +528,6 @@ def handle_callback(call):
             )
             spotify_delivery_markup = types.InlineKeyboardMarkup()
             spotify_delivery_markup.add(types.InlineKeyboardButton("🔄 Get Another Spotify", callback_data="tier_spotify"))
-            spotify_delivery_markup.add(types.InlineKeyboardButton("🔌 Deadflix Extension ↗", url="https://deadflix.com/extension"))
             spotify_delivery_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
             edit_current_message(call, delivery_text, spotify_delivery_markup)
 
