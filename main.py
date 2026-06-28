@@ -404,7 +404,6 @@ def country_handler(message):
 @bot.message_handler(commands=['admin'])
 def admin_command(message):
     if message.chat.id not in ADMIN_IDS:
-        bot.reply_to(message, "⛔ Unauthorized.")
         return
     text = (
         "🛠 <b>ADMIN PANEL — STOCK MANAGER</b>\n"
