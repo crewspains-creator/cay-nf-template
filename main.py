@@ -614,11 +614,106 @@ def handle_callback(call):
                 ),
                 parse_mode="HTML"
             )
+         
+        elif tier in ("premium", "standard", "basic"):
+            import io, re
+            filename = get_netflix_filename()
+            used_now = user["used"][tier]
+            remaining = max(0, 3 - used_now)
+
+            tier_label = tier.upper()
+            delivery_text = (
+                f"🎉 👑 <b>{tier_label} COOKIE — ✅ LIVE</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>\n"
+                f"📊 <b>HOURLY LIMIT:</b> <code>{used_now} / 3</code>\n"
+                f"🔒 <b>REMAINING SLOTS:</b> <code>{remaining} claims left</code>\n"
+                f"⏱ <b>COOLDOWN PERIOD:</b> <code>1 hour rolling</code>\n\n"
+                f"📤 <b>STATUS:</b> Session verified & active! Cookies sent below."
+            )
+            netflix_delivery_markup = types.InlineKeyboardMarkup()
+            netflix_delivery_markup.add(types.InlineKeyboardButton(f"🔄 Get Another {tier_label}", callback_data=f"tier_{tier}"))
+            netflix_delivery_markup.add(types.InlineKeyboardButton("🔌 Deadflix Extension ↗", url="https://deadflix.com/extension"))
+            netflix_delivery_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+            edit_current_message(call, delivery_text, netflix_delivery_markup)
+
+            # ── Parse info from filename ──
+            email_match = re.search(r'\[([^\]]+@[^\]]+)\]', filename)
+            email = email_match.group(1) if email_match else "N/A"
+            username = email.split("@")[0] if email != "N/A" else "N/A"
+            country_match = re.search(r'\]\[([A-Z]{2})\]\[', filename)
+            country = country_match.group(1) if country_match else "N/A"
+
+            # ── Send cookie file ──
+            file_content = f"# Netflix Cookie\n# File: {filename}\n# Generated: {datetime.now()}\n\nCOOKIE_PLACEHOLDER"
+            file_bytes = io.BytesIO(file_content.encode())
+            file_bytes.name = filename
+            bot.send_document(chat_id, file_bytes, caption=(
+                f"🎬 <b>Netflix Cookies</b>\n\n"
+                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>"
+            ), parse_mode="HTML")
+
+            # ── NFToken steps ──
+            nftoken_msg = bot.send_message(
+                chat_id,
+                f"🔍 <b>Generating NFToken:</b> <code>[Parsing Cookie]</code> ⏳",
+                parse_mode="HTML"
+            )
+            time.sleep(1.5)
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=nftoken_msg.message_id,
+                text=f"🔑 <b>Generating NFToken:</b> <code>[Authenticating Session]</code> ⏳",
+                parse_mode="HTML"
+            )
+            time.sleep(1.5)
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=nftoken_msg.message_id,
+                text=f"⚙️ <b>Generating NFToken:</b> <code>[Calling Shakti APIs]</code> ⏳",
+                parse_mode="HTML"
+            )
+            time.sleep(1.5)
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=nftoken_msg.message_id,
+                text=f"🔗 <b>Generating NFToken:</b> <code>[Building Watch Links]</code> ⏳",
+                parse_mode="HTML"
+            )
+            time.sleep(1.5)
+
+            # ── Account details + watch links ──
+            nf_token = f"nft_{int(time.time())}_{chat_id}"
+            watch_browser = f"https://www.netflix.com/watch?nftoken={nf_token}"
+            watch_mobile  = f"https://nflx.it/m/{nf_token}"
+            watch_tv      = f"https://nflx.it/tv/{nf_token}"
+
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=nftoken_msg.message_id,
+                text=(
+                    f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"📧 <b>EMAIL:</b> <code>{username}</code>\n"
+                    f"🌍 <b>COUNTRY:</b> <code>{country}</code>\n"
+                    f"📅 <b>MEMBER SINCE:</b> <code>N/A</code>\n"
+                    f"👤 <b>PROFILES:</b> <code>N/A</code>\n"
+                    f"📞 <b>PHONE:</b> <code>N/A</code>\n\n"
+                    f"🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"🔗 🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
+                    f"📱 📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
+                    f"📺 📺 <a href='{watch_tv}'>Watch on TV</a>"
+                ),
+                parse_mode="HTML",
+                disable_web_page_preview=True
+            )
 
         else:
             url = f"https://example.com/nftoken/{tier}-{int(time.time())}"
             delivery_text = languages.get_text(lang, "cookie_delivered", tier=tier.upper(), url=url)
             edit_current_message(call, delivery_text, main_menu_markup(lang))
+
     elif data == "status":
         text, markup = build_status(chat_id, lang)
         edit_current_message(call, text, markup)
