@@ -527,11 +527,11 @@ def handle_callback(call):
                 f"⏱ <b>COOLDOWN PERIOD:</b> <code>1 hour rolling</code>\n\n"
                 f"📤 <b>STATUS:</b> Session verified & active! Cookies sent below."
             )
-            spotify_markup = types.InlineKeyboardMarkup()
-            spotify_markup.add(types.InlineKeyboardButton("🔄 Get Another Spotify", callback_data="tier_spotify"))
-            spotify_markup.add(types.InlineKeyboardButton("🔌 Deadflix Extension ↗", url="https://deadflix.com/extension"))
-            spotify_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
-            edit_current_message(call, delivery_text, spotify_markup)
+            spotify_delivery_markup = types.InlineKeyboardMarkup()
+            spotify_delivery_markup.add(types.InlineKeyboardButton("🔄 Get Another Spotify", callback_data="tier_spotify"))
+            spotify_delivery_markup.add(types.InlineKeyboardButton("🔌 Deadflix Extension ↗", url="https://deadflix.com/extension"))
+            spotify_delivery_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+            edit_current_message(call, delivery_text, spotify_delivery_markup)
 
             file_content = f"# Spotify Cookie\n# File: {filename}\n# Generated: {datetime.now()}\n\nCOOKIE_PLACEHOLDER"
             file_bytes = io.BytesIO(file_content.encode())
