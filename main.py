@@ -689,12 +689,13 @@ def handle_callback(call):
                 f"COOKIE_PLACEHOLDER_DATA_HERE"
             )
 
-            file_bytes = io.BytesIO(file_content.encode())
-            file_bytes.name = filename
-            bot.send_document(chat_id, file_bytes, caption=(
+            # ── Send cookie details as code message ──
+            bot.send_message(
+                chat_id,
                 f"🎬 <b>Netflix Cookies</b>\n\n"
-                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>"
-            ), parse_mode="HTML")
+                f"<pre>{file_content}</pre>",
+                parse_mode="HTML"
+            )
             
             # ── NFToken steps ──
             nftoken_msg = bot.send_message(
