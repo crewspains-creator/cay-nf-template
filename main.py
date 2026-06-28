@@ -655,13 +655,39 @@ def handle_callback(call):
             country = country_match.group(1) if country_match else "N/A"
 
             # ── Send cookie file ──
-            file_content = f"# Netflix Cookie\n# File: {filename}\n# Generated: {datetime.now()}\n\nCOOKIE_PLACEHOLDER"
-            file_bytes = io.BytesIO(file_content.encode())
-            file_bytes.name = filename
-            bot.send_document(chat_id, file_bytes, caption=(
-                f"🎬 <b>Netflix Cookies</b>\n\n"
-                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>"
-            ), parse_mode="HTML")
+            import random
+            phone = f"+{random.randint(1,99)}{random.randint(1000000000,9999999999)}"
+            cc_last4 = random.randint(1000, 9999)
+            expire_days = random.randint(7, 30)
+            expire_date = (datetime.now() + timedelta(days=expire_days)).strftime("%Y-%m-%d")
+            created_year = random.randint(2019, 2023)
+            streams = random.choice([2, 4])
+            plan_name = tier.capitalize()
+
+            file_content = (
+                f"#{'='*42}\n"
+                f"#NETFLIX ACCOUNT DETAILS\n"
+                f"#SOFTWARE: CookiesSentinal - Advanced Cookies module\n"
+                f"#VERSION: V1.0.9\n"
+                f"#BUILD BY: @HYDRA_x001\n"
+                f"#{'='*42}\n"
+                f"#USERNAME          : {username}\n"
+                f"#EMAIL             : {email}\n"
+                f"#PHONE             : {phone}\n"
+                f"#EMAIL VERIFIED    : Yes\n"
+                f"#CREATED           : {created_year}\n"
+                f"#COUNTRY           : {country}\n"
+                f"#PLAN              : {plan_name} [UHD] [Streams: {streams}]\n"
+                f"#PAYMENT METHOD    : CC ({cc_last4})\n"
+                f"#SOURCE            : Netflix\n"
+                f"#EXPIRE            : {expire_date}\n"
+                f"#DAYS LEFT         : {expire_days} Days\n"
+                f"#PROFILE PIN       : N/A\n"
+                f"#LANGUAGE          : N/A\n"
+                f"#CHECKED AT        : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"#{'='*42}\n\n"
+                f"COOKIE_PLACEHOLDER_DATA_HERE"
+            )
 
             # ── NFToken steps ──
             nftoken_msg = bot.send_message(
