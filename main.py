@@ -149,10 +149,10 @@ def get_prime_filename():
     """Return a fake-realistic Prime cookie filename for display."""
     import random
     samples = [
-        "[Primevideo][gianluca][IT][Tested By hydrax001_Software].txt",
-        "[Primevideo][marcos][BR][Tested By hydrax001_Software].txt",
-        "[Primevideo][john][US][Tested By hydrax001_Software].txt",
-        "[Primevideo][akira][JP][Tested By hydrax001_Software].txt",
+        "[Primevideo][gianluca][IT][Tested By @caydigitals].txt",
+        "[Primevideo][marcos][BR][Tested By @caydigitals].txt",
+        "[Primevideo][john][US][Tested By @caydigitals].txt",
+        "[Primevideo][akira][JP][Tested By @caydigitals].txt",
     ]
     return random.choice(samples)
 
@@ -160,20 +160,20 @@ def get_spotify_filename():
     """Return a fake-realistic Spotify cookie filename for display."""
     import random
     samples = [
-        "[Premium][1 payments][extra Recurring][IN][omkshirsagar7666@gmail.com][Tested By hydrax001_Software].txt",
-        "[Family Premium][1 payments][extra Single Payment][GB][monkmoley@gmail.com][Tested By hydrax001_Software].txt",
-        "[Premium][1 payments][extra Recurring][US][johnsmith99@gmail.com][Tested By hydrax001_Software].txt",
-        "[Family Premium][1 payments][extra Single Payment][BR][marcos.silva@gmail.com][Tested By hydrax001_Software].txt",
+        "[Premium][1 payments][extra Recurring][IN][omkshirsagar7666@gmail.com][Tested By @caydigitals].txt",
+        "[Family Premium][1 payments][extra Single Payment][GB][monkmoley@gmail.com][Tested By @caydigitals].txt",
+        "[Premium][1 payments][extra Recurring][US][johnsmith99@gmail.com][Tested By @caydigitals].txt",
+        "[Family Premium][1 payments][extra Single Payment][BR][marcos.silva@gmail.com][Tested By @caydigitals].txt",
     ]
     return random.choice(samples)
 
 def get_netflix_filename():
     import random
     samples = [
-        "[Premium][1 payments][extra Yes][IT][roberta3alb@gmail.com][Tested By hydrax001_Software].txt",
-        "[Premium][1 payments][extra Yes][US][johnsmith99@gmail.com][Tested By hydrax001_Software].txt",
-        "[Standard][1 payments][extra No][BR][marcos.silva@gmail.com][Tested By hydrax001_Software].txt",
-        "[Basic][1 payments][extra No][DE][hans.mueller@gmail.com][Tested By hydrax001_Software].txt",
+        "[Premium][1 payments][extra Yes][IT][roberta3alb@gmail.com][Tested By @caydigitals].txt",
+        "[Premium][1 payments][extra Yes][US][johnsmith99@gmail.com][Tested By @caydigitals].txt",
+        "[Standard][1 payments][extra No][BR][marcos.silva@gmail.com][Tested By @caydigitals].txt",
+        "[Basic][1 payments][extra No][DE][hans.mueller@gmail.com][Tested By @caydigitals].txt",
     ]
     return random.choice(samples)
 
@@ -643,7 +643,6 @@ def handle_callback(call):
             )
             netflix_delivery_markup = types.InlineKeyboardMarkup()
             netflix_delivery_markup.add(types.InlineKeyboardButton(f"🔄 Get Another {tier_label}", callback_data=f"tier_{tier}"))
-            netflix_delivery_markup.add(types.InlineKeyboardButton("🔌 Deadflix Extension ↗", url="https://deadflix.com/extension"))
             netflix_delivery_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
             edit_current_message(call, delivery_text, netflix_delivery_markup)
 
@@ -667,9 +666,9 @@ def handle_callback(call):
             file_content = (
                 f"#{'='*42}\n"
                 f"#NETFLIX ACCOUNT DETAILS\n"
-                f"#SOFTWARE: CookiesSentinal - Advanced Cookies module\n"
+                f"#BOT: Nightflix - Advanced Cookies module\n"
                 f"#VERSION: V1.0.9\n"
-                f"#BUILD BY: @HYDRA_x001\n"
+                f"#BUILD BY: @caydigitals\n"
                 f"#{'='*42}\n"
                 f"#USERNAME          : {username}\n"
                 f"#EMAIL             : {email}\n"
@@ -713,7 +712,7 @@ def handle_callback(call):
             bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=nftoken_msg.message_id,
-                text=f"⚙️ <b>Generating NFToken:</b> <code>[Calling Shakti APIs]</code> ⏳",
+                text=f"⚙️ <b>Generating NFToken:</b> <code>[Calling Cay APIs]</code> ⏳",
                 parse_mode="HTML"
             )
             time.sleep(1.5)
@@ -837,7 +836,7 @@ def handle_callback(call):
 
 # ====================== RUN ======================
 if __name__ == "__main__":
-    print("🚀 DEADFLIX Bot is running...")
+    print("🚀 NIGHTFLIX Bot is running...")
     bot.delete_webhook(drop_pending_updates=True)
     bot.get_updates(offset=-1)
     bot.set_my_commands([
