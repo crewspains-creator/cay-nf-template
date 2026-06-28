@@ -655,6 +655,13 @@ def handle_callback(call):
             country = country_match.group(1) if country_match else "N/A"
 
             # ── Send cookie file ──
+            file_bytes = io.BytesIO(file_content.encode())
+            file_bytes.name = filename
+            bot.send_document(chat_id, file_bytes, caption=(
+                f"🎬 <b>Netflix Cookies</b>\n\n"
+                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>"
+            ), parse_mode="HTML")
+
             import random
             phone = f"+{random.randint(1,99)}{random.randint(1000000000,9999999999)}"
             cc_last4 = random.randint(1000, 9999)
