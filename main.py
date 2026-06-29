@@ -2,6 +2,7 @@ import telebot
 from telebot import types
 import time
 import languages
+import os
 from datetime import datetime, timedelta, timezone
 from supabase import create_client
 import requests
@@ -13,8 +14,7 @@ requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 SUPABASE_URL = "https://omzmzjptwjqxvjfxtcaf.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tem16anB0d2pxeHZqZnh0Y2FmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzg2ODg4MywiZXhwIjoyMDg5NDQ0ODgzfQ.q5WmCZynlkQQMV1WnXoiVfS5xJM0B2e8_JQUVrRQHdQ"
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-TOKEN = "8863877477:AAEjbHlhU2vynCAArKyfHmszyaT9Jv78UPA"
+TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 ADMIN_IDS = [7399488750]
