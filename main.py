@@ -744,7 +744,7 @@ def handle_callback(call):
     elif data == "spotify":
         edit_current_message(call, "🔽 Choose a tier for <b>Spotify</b>:", spotify_markup(lang))
 
-elif data.startswith("admin_toggle_") and chat_id in ADMIN_IDS:
+    elif data.startswith("admin_toggle_") and chat_id in ADMIN_IDS:
         service = data.replace("admin_toggle_", "")
         if service in SERVICE_VISIBILITY:
             SERVICE_VISIBILITY[service] = not SERVICE_VISIBILITY[service]
