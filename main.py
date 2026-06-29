@@ -207,31 +207,53 @@ def create_nftoken(cookie_dict):
     return None
 
 def check_netflix_account(cookie_dict):
-    """
-    Hit Netflix /account/membership and return parsed info dict.
-    Returns None on failure.
-    """
     netflix_id = cookie_dict.get("NetflixId")
     secure_id  = cookie_dict.get("SecureNetflixId", "")
+    nfvdid     = cookie_dict.get("nfvdid", "")
+    optanon    = cookie_dict.get("OptanonConsent", "")
+
     if not netflix_id:
         return None
+
     session = requests.Session()
-    session.cookies.set("NetflixId", netflix_id)
-    if secure_id:
-        session.cookies.set("SecureNetflixId", secure_id)
+    # Set ALL available cookies, not just NetflixId
+    for name, value in cookie_dict.items():
+        if value:
+            session.cookies.set(name, value, domain=".netflix.com")
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
         "Accept-Encoding": "identity",
+        "Connection": "keep-alive",
     }
     try:
         resp = session.get(
             "https://www.netflix.com/account/membership",
             headers=headers,
             timeout=20,
+            allow_redirects=True,
         )
-        if resp.status_code == 200:
+        if resp.status_code == 200 and resp.text:
             from checker import extract_info
-            return extract_info(resp.text)
+            info = extract_info(resp.text)
+            # If incomplete, try fallback page
+            if not info.get("localizedPlanName") or not info.get("countryOfSignup"):
+                try:
+                    resp2 = session.get(
+                        "https://www.netflix.com/YourAccount",
+                        headers=headers,
+                        timeout=20,
+                        allow_redirects=True,
+                    )
+                    if resp2.status_code == 200 and resp2.text:
+                        from checker import extract_info, merge_info
+                        info2 = extract_info(resp2.text)
+                        info = merge_info(info, info2)
+                except Exception:
+                    pass
+            return info if info else None
     except Exception as e:
         print(f"[Account check error] {e}")
     return None
