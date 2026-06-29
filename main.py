@@ -1123,8 +1123,14 @@ def handle_callback(call):
 if __name__ == "__main__":
     print("🚀 NIGHTFLIX Bot is running...")
     sync_stock_from_db()
-    bot.delete_webhook(drop_pending_updates=True)
-    time.sleep(1)  # Give Telegram time to release old polling connections
+    
+    try:
+        bot.delete_webhook(drop_pending_updates=True)
+        print("✅ Webhook deleted")
+    except Exception as e:
+        print(f"⚠️ delete_webhook failed: {e} — continuing anyway")
+
+    time.sleep(1)
     bot.set_my_commands([
         types.BotCommand("start",   "Open the main menu"),
         types.BotCommand("admin",   "Admin panel (owner only)"),
