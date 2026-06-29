@@ -552,7 +552,7 @@ def build_home(chat_id, lang="en"):
         text += f"\n<b>{label}</b>\n"
         text += f"  ├ 📦 <b>Stock:</b> <code>{stock_str}</code>\n"
         text += f"  ├ 📈 <b>Usage:</b> <code>{used}/3</code> [{bar}]\n"
-        text += f"  └ 🔄 <b>Reset:</b> <code>{resets_str}</code>0"
+        text += f"  └ 🔄 <b>Reset:</b> <code>{resets_str}</code>"
     text += "\n" + languages.get_text(lang, "home_choose")
     return text, main_menu_markup(lang)
 
