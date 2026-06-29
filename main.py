@@ -21,6 +21,13 @@ STOCK = {
     "spotify":       6
 }
 
+SERVICE_VISIBILITY = {
+    "netflix": True,
+    "prime": True,
+    "crunchyroll": True,
+    "spotify": True
+}
+
 def get_user_data(chat_id):
     if chat_id not in USER_DATA:
         USER_DATA[chat_id] = {
@@ -55,19 +62,28 @@ def get_user_data(chat_id):
 
 # ====================== KEYBOARDS ======================
 def main_menu_markup(lang="en"):
-    markup = types.InlineKeyboardMarkup(row_width=3)
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    
+    row1 = []
+    if SERVICE_VISIBILITY["netflix"]:
+        row1.append(types.InlineKeyboardButton("🎬 Netflix", callback_data="netflix"))
+    if SERVICE_VISIBILITY["prime"]:
+        row1.append(types.InlineKeyboardButton("🍿 Prime Video", callback_data="prime"))
+    if row1:
+        markup.add(*row1)
+
+    row2 = []
+    if SERVICE_VISIBILITY["crunchyroll"]:
+        row2.append(types.InlineKeyboardButton("🦊 Crunchyroll", callback_data="crunchyroll"))
+    if SERVICE_VISIBILITY["spotify"]:
+        row2.append(types.InlineKeyboardButton("🎵 Spotify", callback_data="spotify"))
+    if row2:
+        markup.add(*row2)
+
     markup.add(
-        types.InlineKeyboardButton("🎬 Netflix",     callback_data="netflix"),
-        types.InlineKeyboardButton("🍿 Prime Video", callback_data="prime")
-    )
-    markup.add(
-        types.InlineKeyboardButton("🦊 Crunchyroll", callback_data="crunchyroll"),
-        types.InlineKeyboardButton("🎵 Spotify",     callback_data="spotify")
-    )
-    markup.add(
-        types.InlineKeyboardButton(languages.get_text(lang, "btn_status"),   callback_data="status"),
-        types.InlineKeyboardButton(languages.get_text(lang, "btn_stock"),    callback_data="stock"),
-        types.InlineKeyboardButton(languages.get_text(lang, "btn_help"),     callback_data="help")
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_status"), callback_data="status"),
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_stock"),  callback_data="stock"),
+        types.InlineKeyboardButton(languages.get_text(lang, "btn_help"),   callback_data="help")
     )
     markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_language"), callback_data="language"))
     return markup
@@ -131,14 +147,20 @@ def lang_markup():
 
 def country_service_markup(country):
     markup = types.InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        types.InlineKeyboardButton(f"🎬 Netflix ({country})",     callback_data=f"country_netflix_{country}"),
-        types.InlineKeyboardButton(f"🍿 Prime Video ({country})", callback_data=f"country_prime_{country}")
-    )
-    markup.add(
-        types.InlineKeyboardButton(f"🦊 Crunchyroll ({country})", callback_data=f"country_crunchyroll_{country}"),
-        types.InlineKeyboardButton(f"🎵 Spotify ({country})",     callback_data=f"country_spotify_{country}")
-    )
+    row = []
+    if SERVICE_VISIBILITY["netflix"]:
+        row.append(types.InlineKeyboardButton(f"🎬 Netflix ({country})", callback_data=f"country_netflix_{country}"))
+    if SERVICE_VISIBILITY["prime"]:
+        row.append(types.InlineKeyboardButton(f"🍿 Prime Video ({country})", callback_data=f"country_prime_{country}"))
+    if row:
+        markup.add(*row)
+    row2 = []
+    if SERVICE_VISIBILITY["crunchyroll"]:
+        row2.append(types.InlineKeyboardButton(f"🦊 Crunchyroll ({country})", callback_data=f"country_crunchyroll_{country}"))
+    if SERVICE_VISIBILITY["spotify"]:
+        row2.append(types.InlineKeyboardButton(f"🎵 Spotify ({country})", callback_data=f"country_spotify_{country}"))
+    if row2:
+        markup.add(*row2)
     markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
     return markup
 
@@ -212,14 +234,16 @@ def build_home(chat_id, lang="en"):
     text += languages.get_text(lang, "home_status_hdr") + "\n"
     text += "──────────────────────"
 
-    tiers = [
-        ("premium",     "🔥 PREMIUM TIER"),
-        ("standard",    "⭐ STANDARD TIER"),
-        ("basic",       "🎯 BASIC TIER"),
-        ("prime",       "🍿 PRIME VIDEO TIER"),
-        ("crunchyroll", "🦊 CRUNCHYROLL TIER"),
-        ("spotify",     "🎵 SPOTIFY TIER"),
-    ]
+    tiers = []
+    if SERVICE_VISIBILITY["netflix"]:
+        tiers += [("premium", "🔥 PREMIUM TIER"), ("standard", "⭐ STANDARD TIER"), ("basic", "🎯 BASIC TIER")]
+    if SERVICE_VISIBILITY["prime"]:
+        tiers += [("prime", "🍿 PRIME VIDEO TIER")]
+    if SERVICE_VISIBILITY["crunchyroll"]:
+        tiers += [("crunchyroll", "🦊 CRUNCHYROLL TIER")]
+    if SERVICE_VISIBILITY["spotify"]:
+        tiers += [("spotify", "🎵 SPOTIFY TIER")]
+
     for t, label in tiers:
         used  = user["used"].get(t, 0)
         stock = STOCK.get(t, 0)
@@ -258,14 +282,17 @@ def build_home(chat_id, lang="en"):
 def build_status(chat_id, lang="en"):
     user = get_user_data(chat_id)
     text = languages.get_text(lang, "status_title")
-    tier_keys = [
-        ("premium",     "tier_premium"),
-        ("standard",    "tier_standard"),
-        ("basic",       "tier_basic"),
-        ("prime",       "tier_prime"),
-        ("crunchyroll", "🦊 CRUNCHYROLL TIER"),
-        ("spotify",     "🎵 SPOTIFY TIER"),
-    ]
+
+    tier_keys = []
+    if SERVICE_VISIBILITY["netflix"]:
+        tier_keys += [("premium", "tier_premium"), ("standard", "tier_standard"), ("basic", "tier_basic")]
+    if SERVICE_VISIBILITY["prime"]:
+        tier_keys += [("prime", "tier_prime")]
+    if SERVICE_VISIBILITY["crunchyroll"]:
+        tier_keys += [("crunchyroll", "🦊 CRUNCHYROLL TIER")]
+    if SERVICE_VISIBILITY["spotify"]:
+        tier_keys += [("spotify", "🎵 SPOTIFY TIER")]
+
     for t, name_key in tier_keys:
         used  = user["used"].get(t, 0)
         left  = max(0, 3 - used)
@@ -299,14 +326,17 @@ def build_status(chat_id, lang="en"):
 
 def build_stock(lang="en"):
     text = "📦 📦 <b>COOKIE STOCK</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-    items = [
-        ("premium",     "🔥 PREMIUM"),
-        ("standard",    "⭐ STANDARD"),
-        ("basic",       "🎯 BASIC"),
-        ("prime",       "🍿 PRIME VIDEO"),
-        ("crunchyroll", "🦊 CRUNCHYROLL"),
-        ("spotify",     "🎵 SPOTIFY"),
-    ]
+
+    items = []
+    if SERVICE_VISIBILITY["netflix"]:
+        items += [("premium", "🔥 PREMIUM"), ("standard", "⭐ STANDARD"), ("basic", "🎯 BASIC")]
+    if SERVICE_VISIBILITY["prime"]:
+        items += [("prime", "🍿 PRIME VIDEO")]
+    if SERVICE_VISIBILITY["crunchyroll"]:
+        items += [("crunchyroll", "🦊 CRUNCHYROLL")]
+    if SERVICE_VISIBILITY["spotify"]:
+        items += [("spotify", "🎵 SPOTIFY")]
+
     for t, label in items:
         count = STOCK[t]
         if count == 0:
@@ -374,6 +404,15 @@ def admin_stock_markup():
     markup.add(
         types.InlineKeyboardButton(f"🦊 Crunchyroll ({STOCK['crunchyroll']})", callback_data="admin_set_crunchyroll"),
         types.InlineKeyboardButton(f"🎵 Spotify ({STOCK['spotify']})",      callback_data="admin_set_spotify"),
+    )
+    markup.add(types.InlineKeyboardButton("━━━━ VISIBILITY TOGGLES ━━━━", callback_data="noop"))
+    markup.add(
+        types.InlineKeyboardButton(f"{'✅' if SERVICE_VISIBILITY['netflix'] else '❌'} Netflix",         callback_data="admin_toggle_netflix"),
+        types.InlineKeyboardButton(f"{'✅' if SERVICE_VISIBILITY['prime'] else '❌'} Prime Video",       callback_data="admin_toggle_prime"),
+    )
+    markup.add(
+        types.InlineKeyboardButton(f"{'✅' if SERVICE_VISIBILITY['crunchyroll'] else '❌'} Crunchyroll", callback_data="admin_toggle_crunchyroll"),
+        types.InlineKeyboardButton(f"{'✅' if SERVICE_VISIBILITY['spotify'] else '❌'} Spotify",         callback_data="admin_toggle_spotify"),
     )
     markup.add(types.InlineKeyboardButton("🔄 Reset All to 0", callback_data="admin_reset_all"))
     markup.add(types.InlineKeyboardButton("🏠 Main Menu",       callback_data="main_menu"))
@@ -477,6 +516,24 @@ def handle_callback(call):
 
     elif data == "spotify":
         edit_current_message(call, "🔽 Choose a tier for <b>Spotify</b>:", spotify_markup(lang))
+
+    elif data.startswith("admin_toggle_") and chat_id in ADMIN_IDS:
+        service = data.replace("admin_toggle_", "")
+        if service in SERVICE_VISIBILITY:
+            SERVICE_VISIBILITY[service] = not SERVICE_VISIBILITY[service]
+            state = "✅ Enabled" if SERVICE_VISIBILITY[service] else "❌ Hidden"
+            bot.send_message(chat_id, f"<b>{service.title()}</b> is now <b>{state}</b>", parse_mode="HTML")
+            # Refresh the admin panel
+            text = (
+                "🛠 <b>ADMIN PANEL — STOCK MANAGER</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Tap a service to set its stock count.\n"
+                "Current values shown in brackets."
+            )
+            bot.send_message(chat_id, text, reply_markup=admin_stock_markup(), parse_mode="HTML")
+
+    elif data == "noop":
+        pass  # separator button, do nothing
 
     elif data.startswith("tier_"):
         tier = data.split("_", 1)[1]
