@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 
 from supabase import create_client
 
-SUPABASE_URL = "https://your-project.supabase.co"
-SUPABASE_KEY = "your-service-role-key"  # use service role, not anon
+SUPABASE_URL = "https://omzmzjptwjqxvjfxtcaf.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tem16anB0d2pxeHZqZnh0Y2FmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzg2ODg4MywiZXhwIjoyMDg5NDQ0ODgzfQ.q5WmCZynlkQQMV1WnXoiVfS5xJM0B2e8_JQUVrRQHdQ"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
