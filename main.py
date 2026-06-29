@@ -1009,32 +1009,6 @@ def handle_callback(call):
                 nftoken_display = "Unavailable"
                 watch_browser = watch_mobile = watch_tv = None
 
-            # ── Account details ──
-            account_detail_text = (
-                f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"📦 <b>PLAN:</b> <code>Netflix {plan_name}</code>\n"
-                f"🌍 <b>COUNTRY:</b> <code>{country_from_type}</code>\n"
-                f"🆔 <b>DATABASE ID:</b> <code>{public_id}</code>\n"
-            )
-            if nf_token:
-                account_detail_text += (
-                    f"\n🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"🖥️ <a href='{watch_browser}'>Watch on PC</a>\n"
-                    f"📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
-                )
-            else:
-                account_detail_text += f"\n⚠️ <b>NFTOKEN:</b> <code>Could not generate — cookie may need re-check</code>"
-
-            bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=nftoken_msg.message_id,
-                text=account_detail_text,
-                parse_mode="HTML",
-                disable_web_page_preview=True
-            )
-
     elif data == "status":
         text, markup = build_status(chat_id, lang)
         edit_current_message(call, text, markup)
