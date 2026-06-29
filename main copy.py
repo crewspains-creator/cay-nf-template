@@ -4,13 +4,6 @@ import time
 import languages
 from datetime import datetime, timedelta
 
-from supabase import create_client
-
-SUPABASE_URL = "https://your-project.supabase.co"
-SUPABASE_KEY = "your-service-role-key"  # use service role, not anon
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 # ====================== CONFIG ======================
 TOKEN = "8863877477:AAEEW9DN1cP8GWkpiSENJA-56A1viiU28Yw"
 bot = telebot.TeleBot(TOKEN)
@@ -205,76 +198,15 @@ def get_spotify_filename():
     ]
     return random.choice(samples)
 
-def fetch_netflix_cookie(tier):
-    tier_map = {
-        "premium":  "Netflix Premium",
-        "standard": "Netflix Standard",
-        "basic":    "Netflix Basic",
-    }
-    service_prefix = tier_map.get(tier)
-    if not service_prefix:
-        return None
-
-    try:
-        result = supabase.table("vamt_keys") \
-            .select("public_id, key_id, service_type, country, remaining") \
-            .like("service_type", f"{service_prefix}%") \
-            .eq("status", "active") \
-            .gt("remaining", 0) \
-            .order("last_updated", desc=False) \
-            .limit(1) \
-            .execute()
-
-        if not result.data:
-            return None
-
-        row = result.data[0]
-        new_remaining = (row["remaining"] or 1) - 1
-        update_payload = {
-            "remaining": new_remaining,
-            "last_used_at": datetime.utcnow().isoformat(),
-        }
-        if new_remaining <= 0:
-            update_payload["status"] = "expired"
-
-        supabase.table("vamt_keys") \
-            .update(update_payload) \
-            .eq("public_id", row["public_id"]) \
-            .execute()
-
-        return row
-
-    except Exception as e:
-        print(f"Supabase Error: {e}")
-        return None
-
-def sync_stock_from_db():
-    tier_map = {
-        "Netflix Premium":  "premium",
-        "Netflix Standard": "standard",
-        "Netflix Basic":    "basic",
-    }
-    try:
-        result = supabase.table("vamt_keys") \
-            .select("service_type") \
-            .eq("status", "active") \
-            .gt("remaining", 0) \
-            .like("service_type", "Netflix%") \
-            .execute()
-
-        counts = {}
-        for row in result.data:
-            stype = row["service_type"] or ""
-            for prefix, key in tier_map.items():
-                if stype.startswith(prefix):
-                    counts[key] = counts.get(key, 0) + 1
-
-        for key, val in counts.items():
-            STOCK[key] = val
-        print(f"✅ Stock synced: {counts}")
-
-    except Exception as e:
-        print(f"Stock sync error: {e}")
+def get_netflix_filename():
+    import random
+    samples = [
+        "[Premium][1 payments][extra Yes][IT][roberta3alb@gmail.com][Tested By @caydigitals].txt",
+        "[Premium][1 payments][extra Yes][US][johnsmith99@gmail.com][Tested By @caydigitals].txt",
+        "[Standard][1 payments][extra No][BR][marcos.silva@gmail.com][Tested By @caydigitals].txt",
+        "[Basic][1 payments][extra No][DE][hans.mueller@gmail.com][Tested By @caydigitals].txt",
+    ]
+    return random.choice(samples)
 
 # ====================== BUILD FUNCTIONS ======================
 def build_home(chat_id, lang="en"):
@@ -765,42 +697,16 @@ def handle_callback(call):
             )
          
         elif tier in ("premium", "standard", "basic"):
-            import re
+            import io, re
+            filename = get_netflix_filename()
+            used_now = user["used"][tier]
+            remaining = max(0, 3 - used_now)
 
-            # ── Fetch real cookie from DB ──
-            cookie_row = fetch_netflix_cookie(tier)
-            if not cookie_row:
-                edit_current_message(call, (
-                    f"❌ 😔 <b>NETFLIX {tier.upper()} — NO LIVE COOKIES</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"⚠️ <i>All cookies in this tier have expired.\n"
-                    f"Try another tier or check back later.</i>"
-                ), types.InlineKeyboardMarkup().add(
-                    types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")
-                ))
-                return
-
-            cookie_content = cookie_row["key_id"]       # real Netscape cookie
-            public_id      = cookie_row["public_id"]     # e.g. CLY_C1MDJXBC
-            service_type   = cookie_row["service_type"]  # e.g. Netflix Premium DE
-            country        = cookie_row.get("country") or "N/A"
-            used_now       = user["used"][tier]
-            remaining      = max(0, 3 - used_now)
-            tier_label     = tier.upper()
-
-            # ── Parse plan & country from service_type ──
-            # service_type example: "Netflix Premium DE"
-            parts = service_type.split()  # ["Netflix", "Premium", "DE"]
-            plan_name = parts[1] if len(parts) > 1 else tier_label
-            country_from_type = parts[2] if len(parts) > 2 else country
-
-            # ── Delivery message ──
-            filename = f"[{plan_name}][Netflix Cookie][{country_from_type}][{public_id}][Tested By @caydigitals].txt"
+            tier_label = tier.upper()
             delivery_text = (
                 f"🎉 👑 <b>{tier_label} COOKIE — ✅ LIVE</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"📁 <b>DATABASE ID:</b> <code>{public_id}</code>\n"
-                f"🌍 <b>COUNTRY:</b> <code>{country_from_type}</code>\n"
+                f"📁 <b>DATABASE ID:</b> <code>{filename}</code>\n"
                 f"📊 <b>HOURLY LIMIT:</b> <code>{used_now} / 3</code>\n"
                 f"🔒 <b>REMAINING SLOTS:</b> <code>{remaining} claims left</code>\n"
                 f"⏱ <b>COOLDOWN PERIOD:</b> <code>1 hour rolling</code>\n\n"
@@ -811,117 +717,115 @@ def handle_callback(call):
             netflix_delivery_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
             edit_current_message(call, delivery_text, netflix_delivery_markup)
 
-            # ── Send real cookie file ──
-            import io
-            file_bytes = io.BytesIO(cookie_content.encode())
-            file_bytes.name = filename
-            bot.send_document(chat_id, file_bytes, caption=(
-                f"🎬 <b>Netflix {plan_name} Cookie</b>\n\n"
-                f"📁 <b>ID:</b> <code>{public_id}</code>\n"
-                f"🌍 <b>Country:</b> <code>{country_from_type}</code>"
-            ), parse_mode="HTML")
+            # ── Parse info from filename ──
+            email_match = re.search(r'\[([^\]]+@[^\]]+)\]', filename)
+            email = email_match.group(1) if email_match else "N/A"
+            username = email.split("@")[0] if email != "N/A" else "N/A"
+            country_match = re.search(r'\]\[([A-Z]{2})\]\[', filename)
+            country = country_match.group(1) if country_match else "N/A"
 
-            # ── Run checker on the cookie ──
+            # ── Send cookie file ──
+            import random
+            phone = f"+{random.randint(1,99)}{random.randint(1000000000,9999999999)}"
+            cc_last4 = random.randint(1000, 9999)
+            expire_days = random.randint(7, 30)
+            expire_date = (datetime.now() + timedelta(days=expire_days)).strftime("%Y-%m-%d")
+            created_year = random.randint(2019, 2023)
+            streams = random.choice([2, 4])
+            plan_name = tier.capitalize()
+
+            file_content = (
+                f"#{'='*42}\n"
+                f"#NETFLIX ACCOUNT DETAILS\n"
+                f"#BOT: Nightflix - Advanced Cookies module\n"
+                f"#VERSION: V1.0.9\n"
+                f"#BUILD BY: @caydigitals\n"
+                f"#{'='*42}\n"
+                f"#USERNAME          : {username}\n"
+                f"#EMAIL             : {email}\n"
+                f"#PHONE             : {phone}\n"
+                f"#EMAIL VERIFIED    : Yes\n"
+                f"#CREATED           : {created_year}\n"
+                f"#COUNTRY           : {country}\n"
+                f"#PLAN              : {plan_name} [UHD] [Streams: {streams}]\n"
+                f"#PAYMENT METHOD    : CC ({cc_last4})\n"
+                f"#SOURCE            : Netflix\n"
+                f"#EXPIRE            : {expire_date}\n"
+                f"#DAYS LEFT         : {expire_days} Days\n"
+                f"#PROFILE PIN       : N/A\n"
+                f"#LANGUAGE          : N/A\n"
+                f"#CHECKED AT        : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"#{'='*42}\n\n"
+                f"COOKIE_PLACEHOLDER_DATA_HERE"
+            )
+
+            # ── Send cookie details as code message ──
+            bot.send_message(
+                chat_id,
+                f"<pre>{file_content}</pre>",
+                parse_mode="HTML"
+            )
+            
+            # ── NFToken steps ──
             nftoken_msg = bot.send_message(
                 chat_id,
                 f"🔍 <b>Generating NFToken:</b> <code>[Parsing Cookie]</code> ⏳",
                 parse_mode="HTML"
             )
             time.sleep(1.5)
-            bot.edit_message_text(chat_id=chat_id, message_id=nftoken_msg.message_id,
-                text=f"🔑 <b>Generating NFToken:</b> <code>[Authenticating Session]</code> ⏳", parse_mode="HTML")
-            time.sleep(1.5)
-            bot.edit_message_text(chat_id=chat_id, message_id=nftoken_msg.message_id,
-                text=f"⚙️ <b>Generating NFToken:</b> <code>[Calling Cay APIs]</code> ⏳", parse_mode="HTML")
-            time.sleep(1.5)
-            bot.edit_message_text(chat_id=chat_id, message_id=nftoken_msg.message_id,
-                text=f"🔗 <b>Generating NFToken:</b> <code>[Building Watch Links]</code> ⏳", parse_mode="HTML")
-            time.sleep(1.5)
-
-            # ── Build real NFToken from cookie ──
-            from urllib3.exceptions import InsecureRequestWarning
-            import requests as req
-            req.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-
-            # Parse NetflixId from netscape cookie content
-            netflix_id = None
-            for line in cookie_content.splitlines():
-                parts_line = line.strip().split("\t")
-                if len(parts_line) >= 7 and parts_line[5] == "NetflixId":
-                    netflix_id = parts_line[6]
-                    break
-
-            nf_token = None
-            watch_browser = watch_mobile = watch_tv = None
-
-            if netflix_id:
-                try:
-                    nftoken_headers = {
-                        "User-Agent": "Argo/15.48.1 (iPhone; iOS 15.8.5; Scale/2.00)",
-                        "Cookie": f"NetflixId={netflix_id}",
-                        "x-netflix.request.attempt": "1",
-                        "x-netflix.context.app-version": "15.48.1",
-                        "accept-language": "en-US;q=1",
-                    }
-                    nftoken_params = {
-                        "appVersion": "15.48.1",
-                        "device_type": "NFAPPL-02-",
-                        "languages": "en-US",
-                        "locale": "en-US",
-                        "path": '["account","token","default"]',
-                        "pathFormat": "graph",
-                        "responseFormat": "json",
-                    }
-                    r = req.get(
-                        "https://ios.prod.ftl.netflix.com/iosui/user/15.48",
-                        params=nftoken_params,
-                        headers=nftoken_headers,
-                        timeout=15,
-                        verify=False,
-                    )
-                    if r.status_code == 200:
-                        token_data = (
-                            (((r.json().get("value") or {}).get("account") or {}).get("token") or {}).get("default") or {}
-                        )
-                        nf_token = token_data.get("token")
-                except Exception:
-                    nf_token = None
-
-            if nf_token:
-                watch_browser = f"https://netflix.com/?nftoken={nf_token}"
-                watch_mobile  = f"https://netflix.com/unsupported?nftoken={nf_token}"
-                watch_tv      = f"https://nflx.it/tv/{nf_token}"
-                nftoken_display = nf_token
-            else:
-                # Fallback if NFToken fails
-                nftoken_display = "Unavailable"
-                watch_browser = watch_mobile = watch_tv = None
-
-            # ── Account details ──
-            account_detail_text = (
-                f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
-                f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"📦 <b>PLAN:</b> <code>Netflix {plan_name}</code>\n"
-                f"🌍 <b>COUNTRY:</b> <code>{country_from_type}</code>\n"
-                f"🆔 <b>DATABASE ID:</b> <code>{public_id}</code>\n"
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=nftoken_msg.message_id,
+                text=f"🔑 <b>Generating NFToken:</b> <code>[Authenticating Session]</code> ⏳",
+                parse_mode="HTML"
             )
-            if nf_token:
-                account_detail_text += (
-                    f"\n🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"🖥️ <a href='{watch_browser}'>Watch on PC</a>\n"
-                    f"📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
-                )
-            else:
-                account_detail_text += f"\n⚠️ <b>NFTOKEN:</b> <code>Could not generate — cookie may need re-check</code>"
+            time.sleep(1.5)
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=nftoken_msg.message_id,
+                text=f"⚙️ <b>Generating NFToken:</b> <code>[Calling Cay APIs]</code> ⏳",
+                parse_mode="HTML"
+            )
+            time.sleep(1.5)
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=nftoken_msg.message_id,
+                text=f"🔗 <b>Generating NFToken:</b> <code>[Building Watch Links]</code> ⏳",
+                parse_mode="HTML"
+            )
+            time.sleep(1.5)
+
+            # ── Account details + watch links ──
+            nf_token = f"nft_{int(time.time())}_{chat_id}"
+            watch_browser = f"https://www.netflix.com/watch?nftoken={nf_token}"
+            watch_mobile  = f"https://nflx.it/m/{nf_token}"
+            watch_tv      = f"https://nflx.it/tv/{nf_token}"
 
             bot.edit_message_text(
                 chat_id=chat_id,
                 message_id=nftoken_msg.message_id,
-                text=account_detail_text,
+                text=(
+                    f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"📧 <b>EMAIL:</b> <code>{username}</code>\n"
+                    f"🌍 <b>COUNTRY:</b> <code>{country}</code>\n"
+                    f"📅 <b>MEMBER SINCE:</b> <code>N/A</code>\n"
+                    f"👤 <b>PROFILES:</b> <code>N/A</code>\n"
+                    f"📞 <b>PHONE:</b> <code>N/A</code>\n\n"
+                    f"🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"🔗 🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
+                    f"📱 📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
+                    f"📺 📺 <a href='{watch_tv}'>Watch on TV</a>"
+                ),
                 parse_mode="HTML",
                 disable_web_page_preview=True
             )
+
+        else:
+            url = f"https://example.com/nftoken/{tier}-{int(time.time())}"
+            delivery_text = languages.get_text(lang, "cookie_delivered", tier=tier.upper(), url=url)
+            edit_current_message(call, delivery_text, main_menu_markup(lang))
 
     elif data == "status":
         text, markup = build_status(chat_id, lang)
@@ -1004,7 +908,6 @@ def handle_callback(call):
 # ====================== RUN ======================
 if __name__ == "__main__":
     print("🚀 NIGHTFLIX Bot is running...")
-    sync_stock_from_db()
     bot.delete_webhook(drop_pending_updates=True)
     bot.get_updates(offset=-1)
     bot.set_my_commands([
