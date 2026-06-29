@@ -112,15 +112,9 @@ def fetch_cookie_from_db(tier):
         if not result.data:
             return None
         row = result.data[0]
-        new_remaining = max(0, (row["remaining"] or 1) - 1)
-        update_payload = {
-            "remaining": new_remaining,
-            "last_used_at": datetime.now(timezone.utc).isoformat(),
-        }
-        if new_remaining <= 0:
-            update_payload["status"] = "expired"
+        # Only update last_used_at — do NOT decrement remaining or change status
         supabase.table("vamt_keys") \
-            .update(update_payload) \
+            .update({"last_used_at": datetime.now(timezone.utc).isoformat()}) \
             .eq("public_id", row["public_id"]) \
             .execute()
         return row
