@@ -842,9 +842,20 @@ def handle_callback(call):
             watch_mobile  = f"https://netflix.com/unsupported?nftoken={nf_token}" if nf_token else None
             watch_tv      = f"https://netflix.com/t/smarttv?nftoken={nf_token}"   if nf_token else None
 
-            # Step 6: Build enriched cookie file with header block (image 2 style)
-            plan_display = f"{plan_real} [Streams: {streams}]" if streams != "N/A" else plan_real
-            # Format member_since nicely if it's a raw date string
+            # Step 6: Send raw cookie file (no header — just the original cookie)
+            file_bytes = io.BytesIO(cookie_content.encode())
+            file_bytes.name = filename
+            bot.send_document(chat_id, file_bytes,
+                caption=(
+                    f"🎬 <b>Netflix {plan_label} Cookie</b>\n\n"
+                    f"📁 <b>ID:</b> <code>{public_id}</code>\n"
+                    f"🌍 <b>Country:</b> <code>{country_db}</code>"
+                ),
+                parse_mode="HTML"
+            )
+
+            # Step 7: Build header block as <pre> message (image 2 style)
+            plan_display = f"{plan_real} [UHD] [Streams: {streams}]" if streams != "N/A" else plan_real
             member_since_display = member_since
             try:
                 from checker import format_member_since as fmt_ms
@@ -852,7 +863,8 @@ def handle_callback(call):
             except Exception:
                 pass
 
-            header_block = (
+            header_text = (
+                f"<pre>"
                 f"#{'=' * 50}\n"
                 f"#NETFLIX ACCOUNT DETAILS\n"
                 f"#SOFTWARE: CookiesSentinal - Advanced Cookies module\n"
@@ -873,22 +885,12 @@ def handle_callback(call):
                 f"#PROFILE PIN      : N/A\n"
                 f"#LANGUAGE         : N/A\n"
                 f"#CHECKED AT       : {now_str}\n"
-                f"#{'=' * 50}\n\n"
+                f"#{'=' * 50}"
+                f"</pre>"
             )
-            enriched_cookie = header_block + cookie_content
+            bot.send_message(chat_id, header_text, parse_mode="HTML")
 
-            file_bytes = io.BytesIO(enriched_cookie.encode())
-            file_bytes.name = filename
-            bot.send_document(chat_id, file_bytes,
-                caption=(
-                    f"🎬 <b>Netflix {plan_label} Cookie</b>\n\n"
-                    f"📁 <b>ID:</b> <code>{public_id}</code>\n"
-                    f"🌍 <b>Country:</b> <code>{country_db}</code>"
-                ),
-                parse_mode="HTML"
-            )
-
-            # Step 7: Account details message — image 3 style
+            # Step 8: Account details message — image 3 style
             profile_label = f"PROFILES ({profile_count})" if profile_count else "PROFILES"
             detail_text = (
                 f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
