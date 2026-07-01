@@ -657,20 +657,20 @@ def build_home(chat_id, lang="en"):
     lang_name = languages.get_lang_name(lang)
     text  = languages.get_text(lang, "home_welcome", name=name.upper()) + "\n"
     text += languages.get_text(lang, "home_profile") + "\n"
-    text += f"  ├ 📛 <b>Name:</b> <code>{name}</code>\n"
+    text += f"  ├ 👤 <b>Name:</b> <code>{name}</code>\n"
     text += f"  ├ 🆔 <b>User ID:</b> <code>{chat_id}</code>\n"
     text += f"  ├ 🌐 <b>Language:</b> <code>{lang_name}</code>\n"
-    text += f"  └ 🏅 <b>Status:</b> <code>{languages.get_text(lang, 'home_active')}</code>\n\n"
+    text += f"  └ 👑 <b>Status:</b> <code>{languages.get_text(lang, 'home_active')}</code>\n\n"
     text += languages.get_text(lang, "home_live_line") + "\n\n"
     text += languages.get_text(lang, "home_rules_header") + "\n"
     text += "  • 📈 " + languages.get_text(lang, "home_rule1") + "\n"
-    text += "  • 🔄 " + languages.get_text(lang, "home_rule2") + "\n"
+    text += "  • ⏱️ " + languages.get_text(lang, "home_rule2") + "\n"
     text += "  • ❌ " + languages.get_text(lang, "home_rule3") + "\n\n"
     text += languages.get_text(lang, "home_status_hdr") + "\n"
     text += "──────────────────────"
     tiers = []
     if SERVICE_VISIBILITY["netflix"]:
-        tiers += [("premium","🔥 PREMIUM TIER"),("standard","⭐ STANDARD TIER"),("basic","🎯 BASIC TIER")]
+        tiers += [("premium","👑 PREMIUM TIER"),("standard","⭐ STANDARD TIER"),("basic","🎯 BASIC TIER")]
     if SERVICE_VISIBILITY["prime"]:
         tiers += [("prime","🍿 PRIME VIDEO TIER")]
     if SERVICE_VISIBILITY["crunchyroll"]:
@@ -700,8 +700,8 @@ def build_home(chat_id, lang="en"):
         bar = "🟥🟥🟥" if used >= 3 else "🟩" * used + "⬜" * (3 - used)
         text += f"\n<b>{label}</b>\n"
         text += f"  ├ 📦 <b>Stock:</b> <code>{stock_str}</code>\n"
-        text += f"  ├ 📈 <b>Usage:</b> <code>{used}/3</code> [{bar}]\n"
-        text += f"  └ 🔄 <b>Reset:</b> <code>{resets_str}</code>"
+        text += f"  ├ 📊 <b>Usage:</b> <code>{used}/3</code> [{bar}]\n"
+        text += f"  └ ⏱️ <b>Reset:</b> <code>{resets_str}</code>"
     text += "\n" + languages.get_text(lang, "home_choose")
     return text, main_menu_markup(lang)
 
@@ -742,23 +742,26 @@ def build_stock(lang="en"):
     text = "📦 📦 <b>COOKIE STOCK</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
     items = []
     if SERVICE_VISIBILITY["netflix"]:
-        items += [("premium","🔥 PREMIUM"),("standard","⭐ STANDARD"),("basic","🎯 BASIC")]
+        items += [("premium","👑 PREMIUM"),("standard","⭐ STANDARD"),("basic","🎯 BASIC")]
     if SERVICE_VISIBILITY["prime"]:
         items += [("prime","🍿 PRIME VIDEO")]
     if SERVICE_VISIBILITY["crunchyroll"]:
         items += [("crunchyroll","🦊 CRUNCHYROLL")]
     if SERVICE_VISIBILITY["spotify"]:
         items += [("spotify","🎵 SPOTIFY")]
+
+    MAX_STOCK = 2000
+    BAR_BLOCKS = 10
+
     for t, label in items:
         count = STOCK[t]
         if count == 0:
-            bar = "⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜"
-        elif count <= 10:
-            filled = max(1, count // 30)
-            bar = "🟩" * filled + "⬜" * (10 - filled)
+            bar = "⬜" * BAR_BLOCKS
         else:
-            bar = "🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩"
+            filled = max(1, min(BAR_BLOCKS, round((count / MAX_STOCK) * BAR_BLOCKS)))
+            bar = "🟩" * filled + "⬜" * (BAR_BLOCKS - filled)
         text += f"<b>{label}:</b> <code>{count} accounts</code>\n{bar}\n\n"
+
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_refresh"),   callback_data="stock"))
     markup.add(types.InlineKeyboardButton(languages.get_text(lang, "btn_main_menu"), callback_data="main_menu"))
@@ -1139,6 +1142,8 @@ def handle_callback(call):
 
             plan_display = f"{plan_real} [{quality}] [Streams: {streams}]" if streams != "N/A" else plan_real
             profile_label = f"PROFILES ({profile_count})" if profile_count else "PROFILES"
+            extra_display = "Yes" if str(extra_member).lower() not in ("n/a", "false", "none", "", "no") else "No"
+            db_filename = f"[{tier.capitalize()}] [1 payments] [extra {extra_display}] [{country_real}] [{email}] [Tested By caydigitals].txt"
 
             # Step 4: Show #NETFLIX ACCOUNT DETAILS header
             header_text = (
@@ -1190,7 +1195,7 @@ def handle_callback(call):
             edit_current_message(call,
                 f"🎉 👑 <b>{tier_label} COOKIE — ✅ LIVE</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                f"📁 <b>DATABASE ID:</b> <code>{public_id}</code>\n"
+                f"📁 <b>DATABASE ID:</b> <code>{db_filename}</code>\n"
                 f"📊 <b>HOURLY LIMIT:</b> <code>{used_now} / 3</code>\n"
                 f"🔒 <b>REMAINING SLOTS:</b> <code>{remaining} claims left</code>\n"
                 f"⏱ <b>COOLDOWN PERIOD:</b> <code>1 hour rolling</code>\n\n"
