@@ -128,7 +128,7 @@ def netflix_tier_markup_by_country(country, lang="en"):
     return markup
 
 # ====================== SUPABASE HELPERS ======================
-def fetch_cookie_from_db(tier):
+def fetch_cookie_from_db(tier, country=None):
     import random
     tier_map = {
         "premium":  "Netflix Premium",
@@ -139,29 +139,25 @@ def fetch_cookie_from_db(tier):
     if not service_prefix:
         return None
     try:
-        # Fetch a pool of up to 50 available cookies, then pick one randomly
-        result = supabase.table("vamt_keys") \
+        query = supabase.table("vamt_keys") \
             .select("*") \
-            .like("service_type", f"{service_prefix} %") \
-            .gt("remaining", 0) \
-            .limit(50) \
-            .execute()
+            .like("service_type", f"{service_prefix}%") \
+            .gt("remaining", 0)
 
-        print(f"[DEBUG] tier={tier} prefix='{service_prefix}' pool={len(result.data)} rows")
+        if country:
+            query = query.eq("country", country)
+
+        result = query.limit(50).execute()
+
         if not result.data:
             return None
 
-        # Pick a random one from the pool
         row = random.choice(result.data)
-        print(f"[DEBUG] selected service_type: {row.get('service_type')}, status: {row.get('status')}")
 
-        # Only update last_used_at, no decrement
         pk_col = "public_id" if "public_id" in row else None
         if pk_col:
             supabase.table("vamt_keys") \
-                .update({
-                    "last_used_at": datetime.now(timezone.utc).isoformat()
-                }) \
+                .update({"last_used_at": datetime.now(timezone.utc).isoformat()}) \
                 .eq(pk_col, row[pk_col]) \
                 .execute()
 
@@ -818,21 +814,25 @@ def admin_command(message):
         "Current values shown in brackets."
     )
     bot.send_message(message.chat.id, text, reply_markup=admin_stock_markup(), parse_mode="HTML")
-    
-@bot.callback_query_handler(func=lambda call: call.data.startswith("netflix_"))
-def handle_country_netflix(call):
-    country = call.data.split("_")[1].upper()
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith(("netflix_", "prime_", "crunchyroll_", "spotify_")) and "_" in call.data)
+def handle_country_service_selection(call):
+    parts = call.data.split("_", 1)
+    service = parts[0]
+    country = parts[1].upper()
     chat_id = call.message.chat.id
 
-    # Save selected country
     if chat_id not in USER_DATA:
         USER_DATA[chat_id] = {}
     USER_DATA[chat_id]["selected_country"] = country
 
-    edit_current_message(call, 
-        f"🌍 <b>Country: {country}</b>\n\nChoose a tier below:",
-        netflix_tier_markup_by_country(country)
-    )
+    if service == "netflix":
+        edit_current_message(call,
+            f"🌍 <b>Country: {country}</b>\n\nChoose a tier below:",
+            netflix_tier_markup_by_country(country)
+        )
+    else:
+        edit_current_message(call, f"{service.title()} for {country} is coming soon.", main_menu_markup())
 
 @bot.message_handler(func=lambda m: m.chat.id in ADMIN_IDS and m.chat.id in ADMIN_PENDING)
 def admin_set_stock_value(message):
