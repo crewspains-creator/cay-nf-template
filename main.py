@@ -187,6 +187,41 @@ def push_visibility_to_db(service, value):
     except Exception as e:
         print(f"[Visibility push error] {e}")
 
+def load_user_usage_from_db(chat_id):
+    try:
+        result = supabase.table("user_usage") \
+            .select("*") \
+            .eq("chat_id", chat_id) \
+            .execute()
+        used = {}
+        tier_reset = {}
+        for row in result.data:
+            tier = row["tier"]
+            used[tier] = row.get("used", 0)
+            reset_at_str = row.get("reset_at")
+            if reset_at_str:
+                try:
+                    tier_reset[tier] = datetime.fromisoformat(reset_at_str.replace("Z", "+00:00")).astimezone().replace(tzinfo=None)
+                except:
+                    tier_reset[tier] = None
+            else:
+                tier_reset[tier] = None
+        return used, tier_reset
+    except Exception as e:
+        print(f"[load_user_usage error] {e}")
+        return {}, {}
+
+def save_user_usage_to_db(chat_id, tier, used, reset_at):
+    try:
+        supabase.table("user_usage").upsert({
+            "chat_id": chat_id,
+            "tier": tier,
+            "used": used,
+            "reset_at": reset_at.isoformat() if reset_at else None
+        }).execute()
+    except Exception as e:
+        print(f"[save_user_usage error] {e}")
+
 def sync_stock_from_db():
     tier_map = {
         "Netflix Premium":      "premium",
@@ -437,21 +472,24 @@ def get_spotify_filename():
 # ====================== USER DATA ======================
 def get_user_data(chat_id):
     if chat_id not in USER_DATA:
+        # Load from DB on first access
+        db_used, db_reset = load_user_usage_from_db(chat_id)
+        all_tiers = ("premium", "standard", "basic", "prime", "crunchyroll", "spotify")
         USER_DATA[chat_id] = {
-            "used": {k: 0 for k in ("premium","standard","basic","prime","crunchyroll","spotify")},
-            "tier_reset": {k: None for k in ("premium","standard","basic","prime","crunchyroll","spotify")},
+            "used":       {k: db_used.get(k, 0) for k in all_tiers},
+            "tier_reset": {k: db_reset.get(k, None) for k in all_tiers},
             "lang": "en"
         }
+
     data = USER_DATA[chat_id]
-    for key in ("crunchyroll", "spotify"):
-        data["used"].setdefault(key, 0)
-        data.setdefault("tier_reset", {})[key] = data.get("tier_reset", {}).get(key)
     now = datetime.now()
     for t in list(data["used"]):
         reset_at = (data.get("tier_reset") or {}).get(t)
         if reset_at and now >= reset_at:
             data["used"][t] = 0
             data["tier_reset"][t] = None
+            # Clear expired reset in DB too
+            save_user_usage_to_db(chat_id, t, 0, None)
     return data
 
 # ====================== KEYBOARDS ======================
@@ -470,7 +508,7 @@ def main_menu_markup(lang="en"):
         service_buttons.append(types.InlineKeyboardButton("🎵 Spotify", callback_data="spotify"))
 
     # Add 2 per row dynamically
-    for i in range(0, len(service_buttons), 2):
+    for i in range(0, len(service_buttons), 3):
         markup.add(*service_buttons[i:i+2])
 
     markup.add(
@@ -996,6 +1034,8 @@ def handle_callback(call):
 
         used_now  = user["used"][tier]
         remaining = max(0, 3 - used_now)
+
+        save_user_usage_to_db(chat_id, tier, user["used"][tier], user["tier_reset"].get(tier))
 
         # ════════════════════════════════════════
         # ── NETFLIX TIERS (real DB + checker) ──
