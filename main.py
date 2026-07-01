@@ -189,7 +189,7 @@ def push_visibility_to_db(service, value):
 
 def load_user_usage_from_db(chat_id):
     try:
-        result = supabase.table("user_usage") \
+        result = supabase.table("nightflix_user_usage") \
             .select("*") \
             .eq("chat_id", chat_id) \
             .execute()
@@ -213,7 +213,7 @@ def load_user_usage_from_db(chat_id):
 
 def save_user_usage_to_db(chat_id, tier, used, reset_at):
     try:
-        supabase.table("user_usage").upsert({
+        supabase.table("nightflix_user_usage").upsert({
             "chat_id": chat_id,
             "tier": tier,
             "used": used,
