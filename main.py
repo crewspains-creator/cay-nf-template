@@ -909,34 +909,25 @@ def handle_callback(call):
         if tier in ("premium", "standard", "basic"):
             import io, re
 
-            # Step 1: Fetch cookie row from Supabase (same)
+            # Step 1: Fetch from Supabase
             cookie_row = fetch_cookie_from_db(tier)
             if not cookie_row:
-                edit_current_message(call,
-                    f"❌ 😔 <b>NETFLIX {tier.upper()} — NO LIVE COOKIES</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"⚠️ <i>All cookies in this tier have expired.\nTry another tier or check back later.</i>",
-                    types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
-                )
+                edit_current_message(call, f"❌ 😔 <b>NETFLIX {tier.upper()} — NO LIVE COOKIES</b>...", types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")))
                 user["used"][tier] = max(0, user["used"][tier] - 1)
                 STOCK[tier] += 1
                 return
 
             cookie_content = cookie_row["key_id"]
-            public_id = (
-                cookie_row.get("public_id") or
-                cookie_row.get("id") or
-                cookie_row.get("key_id", "")[:12]
-            )
+            public_id = cookie_row.get("public_id") or cookie_row.get("id") or cookie_row.get("key_id", "")[:12]
             service_type = cookie_row.get("service_type", "")
-            db_country   = cookie_row.get("country") or "N/A"
+            db_country = cookie_row.get("country") or "N/A"
 
-            parts      = service_type.split()
+            parts = service_type.split()
             plan_label = tier.capitalize()
             country_db = parts[2] if len(parts) > 2 else db_country
             tier_label = tier.upper()
 
-            # Step 2: Show VALIDATING card (same)
+            # Step 2: Show VALIDATING card
             edit_current_message(call,
                 f"🔍 🔍 <b>VALIDATING {tier_label} COOKIE...</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -948,25 +939,20 @@ def handle_callback(call):
 
             cookie_dict = parse_cookie_dict(cookie_content)
 
-            # Step 3: Check + pull fields (moved up)
+            # Step 3: Run check + pull fields
             account_info = check_netflix_account(cookie_dict)
             now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             if not account_info and not country_db:
-                bot.delete_message(chat_id=chat_id, message_id=checking_msg.message_id)
-                edit_current_message(call,
-                    f"❌ 💀 <b>NETFLIX {tier_label} — COOKIE DEAD</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"⚠️ <i>This cookie failed live validation.\nTry again to get a fresh one.</i>",
-                    types.InlineKeyboardMarkup().row(
-                        types.InlineKeyboardButton(f"🔄 Try Again", callback_data=f"tier_{tier}"),
-                        types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")
-                    )
-                )
+                edit_current_message(call, f"❌ 💀 <b>NETFLIX {tier_label} — COOKIE DEAD</b>...", types.InlineKeyboardMarkup().row(
+                    types.InlineKeyboardButton(f"🔄 Try Again", callback_data=f"tier_{tier}"),
+                    types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")
+                ))
                 user["used"][tier] = max(0, user["used"][tier] - 1)
                 STOCK[tier] += 1
                 return
 
+            # All field pulling (email, name_acc, days_left, language, nf_token, etc.)
             email          = account_info.get("email") or "N/A"
             name_acc       = account_info.get("accountOwnerName") or "N/A"
             country_real   = account_info.get("countryOfSignup") or country_db or "N/A"
@@ -992,35 +978,31 @@ def handle_callback(call):
             try:
                 from checker import format_member_since as fmt_ms
                 member_since_display = fmt_ms(member_since) if member_since != "N/A" else "N/A"
-            except Exception:
+            except:
                 pass
 
             days_left = "N/A"
             try:
                 if next_bill and next_bill != "N/A":
                     from datetime import datetime as dt
-                    next_date = dt.strptime(next_bill, "%Y-%m-%d")
-                    today = dt.now().date()
-                    delta = (next_date.date() - today).days
+                    delta = (dt.strptime(next_bill, "%Y-%m-%d").date() - dt.now().date()).days
                     days_left = f"{delta} days" if delta > 0 else "Expired"
             except:
-                days_left = "N/A"
+                pass
 
             language = account_info.get("language") or account_info.get("preferredLanguage") or "N/A"
 
             nf_token_data, error = create_nftoken(cookie_dict, attempts=3)
             nf_token = nf_token_data.get("token") if nf_token_data else None
 
-            if error:
-                print(f"[NFToken Error] {error}")
             watch_browser = f"https://netflix.com/?nftoken={nf_token}" if nf_token else None
             watch_mobile  = f"https://netflix.com/unsupported?nftoken={nf_token}" if nf_token else None
             watch_tv      = f"https://netflix.com/t/smarttv?nftoken={nf_token}" if nf_token else None
 
-            plan_display  = f"{plan_real} [{quality}] [Streams: {streams}]" if streams != "N/A" else plan_real
+            plan_display = f"{plan_real} [{quality}] [Streams: {streams}]" if streams != "N/A" else plan_real
             profile_label = f"PROFILES ({profile_count})" if profile_count else "PROFILES"
 
-            # Step 4: Header (moved here - before animation)
+            # Step 4: Show #NETFLIX ACCOUNT DETAILS header
             header_text = (
                 f"<pre>"
                 f"#{'=' * 50}\n"
@@ -1052,24 +1034,18 @@ def handle_callback(call):
             )
             bot.send_message(chat_id, header_text, parse_mode="HTML")
 
-            # Step 5: Long animation (moved here - after header)
-            checking_msg = bot.send_message(chat_id,
-                f"🔍 <b>Checking Cookie:</b> <code>[Parsing Cookie]</code> ⏳",
-                parse_mode="HTML"
-            )
+            # Step 5: Long animation
+            checking_msg = bot.send_message(chat_id, f"🔍 <b>Checking Cookie:</b> <code>[Parsing Cookie]</code> ⏳", parse_mode="HTML")
             time.sleep(0.3)
-            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id,
-                text=f"🔑 <b>Checking Cookie:</b> <code>[Authenticating Session]</code> ⏳", parse_mode="HTML")
+            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id, text=f"🔑 <b>Checking Cookie:</b> <code>[Authenticating Session]</code> ⏳", parse_mode="HTML")
             time.sleep(0.3)
-            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id,
-                text=f"⚙️ <b>Checking Cookie:</b> <code>[Calling Cay APIs]</code> ⏳", parse_mode="HTML")
+            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id, text=f"⚙️ <b>Checking Cookie:</b> <code>[Calling Cay APIs]</code> ⏳", parse_mode="HTML")
             time.sleep(0.3)
-            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id,
-                text=f"🔗 <b>Checking Cookie:</b> <code>[Building Watch Links]</code> ⏳", parse_mode="HTML")
+            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id, text=f"🔗 <b>Checking Cookie:</b> <code>[Building Watch Links]</code> ⏳", parse_mode="HTML")
             time.sleep(0.3)
             bot.delete_message(chat_id=chat_id, message_id=checking_msg.message_id)
 
-            # Step 6: LIVE confirmation (same position)
+            # Step 6: Show ✅ LIVE confirmation (this is what you wanted to keep)
             delivery_markup = types.InlineKeyboardMarkup()
             delivery_markup.add(types.InlineKeyboardButton(f"🔄 Get Another {tier_label}", callback_data=f"tier_{tier}"))
             delivery_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
@@ -1084,7 +1060,7 @@ def handle_callback(call):
                 delivery_markup
             )
 
-            # Step 7: Detail message (same)
+            # Step 7: Show ACCOUNT DETAILS + NFToken links
             detail_text = (
                 f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -1098,19 +1074,14 @@ def handle_callback(call):
                 detail_text += (
                     f"\n🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔗 🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
-                    f"📱 📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
-                    f"📺 📺 <a href='{watch_tv}'>Watch on TV</a>\n"
+                    f"🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
+                    f"📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
+                    f"📺 <a href='{watch_tv}'>Watch on TV</a>\n"
                 )
             else:
                 detail_text += f"\n⚠️ <b>NFTOKEN:</b> <code>Could not generate — cookie may need re-check</code>"
 
-            bot.send_message(
-                chat_id,
-                detail_text,
-                parse_mode="HTML",
-                disable_web_page_preview=True
-            )
+            bot.send_message(chat_id, detail_text, parse_mode="HTML", disable_web_page_preview=True)
 
         # ════════════════════════════════════════
         # ── PRIME VIDEO ──
