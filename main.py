@@ -1216,36 +1216,67 @@ def handle_callback(call):
         edit_current_message(call, "✅ <b>All stocks reset to 0.</b>", admin_stock_markup())
 
     elif data.startswith("by_country_"):
-        service = data.replace("by_country_", "")   # netflix, prime, crunchyroll, or spotify
-
         edit_current_message(call,
-            f"🌍 <b>Choose a country for {service.upper()}</b>\n\n"
-            f"Send this command:\n"
-            f"/country US   → United States\n"
-            f"/country BR   → Brazil\n"
-            f"/country IN   → India\n"
-            f"/country DE   → Germany\n"
-            f"/country FR   → France\n"
-            f"/country ID   → Indonesia\n\n"
-            f"Example: /country US"
+            f"🌍 <b>Get Cookies by Country</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"Use: <code>/country IN</code>\n"
+            f"Examples: IN • US • BR • FR • DE • ID",
+            types.InlineKeyboardMarkup().add(
+                types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")
+            )
         )
 
     elif data.startswith("country_"):
         parts   = data.split("_", 2)
-        service = parts[1]
-        country = parts[2]
+        service = parts[1]           # netflix, prime, crunchyroll, spotify
+        country = parts[2].upper()   # US, BR, PH, IN, etc.
+
         edit_current_message(call, f"🔍 Searching <b>{service.title()}</b> cookies for <b>{country}</b>...")
-        time.sleep(1.5)
-        if STOCK.get(service, 0) > 0:
-            url = f"https://example.com/nftoken/{service}-{country.lower()}-{int(time.time())}"
+
+        try:
+            # Map service to prefix used in service_type column
+            service_prefix = {
+                "netflix":     "Netflix",
+                "prime":       "Primevideo",
+                "crunchyroll": "Crunchyroll",
+                "spotify":     "Spotify"
+            }.get(service, service)
+
+            # Query: filter by service_type prefix + exact country + remaining > 0
+            result = supabase.table("vamt_keys") \
+                .select("*") \
+                .like("service_type", f"{service_prefix}%") \
+                .eq("country", country) \
+                .gt("remaining", 0) \
+                .order("last_used_at", desc=False) \
+                .limit(1) \
+                .execute()
+
+            if result.data:
+                row = result.data[0]
+
+                # Optional: update last_used_at
+                supabase.table("vamt_keys") \
+                    .update({"last_used_at": datetime.now(timezone.utc).isoformat()}) \
+                    .eq("key_id", row["key_id"]) \
+                    .execute()
+
+                edit_current_message(call,
+                    f"✅ <b>{service.upper()} COOKIE FOUND ({country})!</b>\n\n"
+                    f"📁 Database ID: <code>{row.get('public_id', 'N/A')}</code>\n"
+                    f"📦 Service: <code>{row.get('service_type')}</code>",
+                    main_menu_markup(lang)
+                )
+            else:
+                edit_current_message(call,
+                    f"❌ <b>No {service.title()} cookies available for {country}.</b>",
+                    main_menu_markup(lang)
+                )
+
+        except Exception as e:
+            print(f"[Country Error] {e}")
             edit_current_message(call,
-                f"✅ <b>{service.upper()} COOKIE DELIVERED ({country})!</b>\n\n"
-                f"🔗 <code>{url}</code>\n\nImport the cookie and open the link.\nUse responsibly!",
-                main_menu_markup(lang)
-            )
-        else:
-            edit_current_message(call,
-                f"❌ <b>No {service.title()} cookies available for {country}.</b>",
+                f"❌ Something went wrong while checking {country}.",
                 main_menu_markup(lang)
             )
 
