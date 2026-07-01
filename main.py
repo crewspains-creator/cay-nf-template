@@ -1044,7 +1044,13 @@ def handle_callback(call):
         pass
 
     elif data.startswith("tier_"):
-        tier = data.split("_", 1)[1]
+        parts = data.split("_")
+        tier = parts[1]
+        country_from_button = parts[2] if len(parts) > 2 else None
+
+        if country_from_button:
+            USER_DATA.setdefault(chat_id, {})["selected_country"] = country_from_button
+
         emoji, service_name = get_service_info(tier)
 
         # ── Out of stock check ──
@@ -1086,7 +1092,7 @@ def handle_callback(call):
             f"⚙️ <b>METHOD:</b> <code>Automated Session Validation</code>\n\n"
             f"🕐 <i>Please wait while we establish a live connection...</i>"
         )
-        time.sleep(0.1)
+        time.sleep(0.2)
 
         # ── Increment usage ──
         user["used"][tier] = user["used"].get(tier, 0) + 1
