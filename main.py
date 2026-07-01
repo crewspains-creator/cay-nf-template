@@ -91,6 +91,42 @@ NFTOKEN_HEADERS = {
     "x-netflix.request.client.timezoneid": "Asia/Dhaka",
 }
 
+def netflix_tier_markup_by_country(country, lang="en"):
+    # Get counts only for this country
+    try:
+        result = supabase.table("vamt_keys") \
+            .select("service_type") \
+            .like("service_type", "Netflix%") \
+            .eq("country", country) \
+            .gt("remaining", 0) \
+            .execute()
+
+        premium_count = 0
+        standard_count = 0
+        basic_count = 0
+
+        for row in result.data:
+            stype = row.get("service_type", "")
+            if "Premium" in stype:
+                premium_count += 1
+            elif "Standard" in stype:
+                standard_count += 1
+            elif "Basic" in stype:
+                basic_count += 1
+
+    except:
+        premium_count = standard_count = basic_count = 0
+
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton(f"👑 Premium ({premium_count})", callback_data=f"tier_premium_{country}"),
+        types.InlineKeyboardButton(f"⭐ Standard ({standard_count})", callback_data=f"tier_standard_{country}")
+    )
+    markup.add(types.InlineKeyboardButton(f"🔴 Basic ({basic_count})", callback_data=f"tier_basic_{country}"))
+    markup.add(types.InlineKeyboardButton("🌍 By Country", callback_data="by_country_netflix"))
+    markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    return markup
+
 # ====================== SUPABASE HELPERS ======================
 def fetch_cookie_from_db(tier):
     import random
@@ -782,6 +818,21 @@ def admin_command(message):
         "Current values shown in brackets."
     )
     bot.send_message(message.chat.id, text, reply_markup=admin_stock_markup(), parse_mode="HTML")
+    
+@bot.callback_query_handler(func=lambda call: call.data.startswith("netflix_"))
+def handle_country_netflix(call):
+    country = call.data.split("_")[1].upper()
+    chat_id = call.message.chat.id
+
+    # Save selected country
+    if chat_id not in USER_DATA:
+        USER_DATA[chat_id] = {}
+    USER_DATA[chat_id]["selected_country"] = country
+
+    edit_current_message(call, 
+        f"🌍 <b>Country: {country}</b>\n\nChoose a tier below:",
+        netflix_tier_markup_by_country(country)
+    )
 
 @bot.message_handler(func=lambda m: m.chat.id in ADMIN_IDS and m.chat.id in ADMIN_PENDING)
 def admin_set_stock_value(message):
