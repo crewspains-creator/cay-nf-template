@@ -892,7 +892,7 @@ def handle_callback(call):
             f"⚙️ <b>METHOD:</b> <code>Automated Session Validation</code>\n\n"
             f"🕐 <i>Please wait while we establish a live connection...</i>"
         )
-        time.sleep(0.4)
+        time.sleep(0.3)
 
         # ── Increment usage ──
         user["used"][tier] = user["used"].get(tier, 0) + 1
@@ -954,19 +954,18 @@ def handle_callback(call):
                 f"🔍 <b>Checking Cookie:</b> <code>[Parsing Cookie]</code> ⏳",
                 parse_mode="HTML"
             )
-            time.sleep(0.4)
+            time.sleep(0.3)
             bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id,
                 text=f"🔑 <b>Checking Cookie:</b> <code>[Authenticating Session]</code> ⏳", parse_mode="HTML")
-            time.sleep(0.4)
+            time.sleep(0.3)
             bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id,
                 text=f"⚙️ <b>Checking Cookie:</b> <code>[Calling Cay APIs]</code> ⏳", parse_mode="HTML")
-
             account_info = check_netflix_account(cookie_dict)
             now_str      = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+            time.sleep(0.3)
             bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id,
                 text=f"🔗 <b>Checking Cookie:</b> <code>[Building Watch Links]</code> ⏳", parse_mode="HTML")
-
+            time.sleep(0.3)
             # Step 4: Dead cookie check
             if not account_info and not country_db:
                 bot.delete_message(chat_id=chat_id, message_id=checking_msg.message_id)
