@@ -1133,7 +1133,6 @@ def normalize_netscape_cookie_text(raw_text):
 
 
 def cookies_dict_from_netscape(netscape_text):
-    """Now uses the improved robust parser"""
     return extract_cookie_dict(netscape_text)
 
 
@@ -1979,8 +1978,7 @@ def generate_unknown_guid():
 def create_nftoken(cookie_dict, attempts=3):
     """
     Improved NFToken generator.
-    - Uses both NetflixId + SecureNetflixId when available (big success boost)
-    - Better error handling + retries
+    Supports both NetflixId + SecureNetflixId.
     """
     netflix_id = cookie_dict.get("NetflixId") or cookie_dict.get("netflixid")
     secure_id = cookie_dict.get("SecureNetflixId") or cookie_dict.get("securenetflixid")
@@ -2019,7 +2017,7 @@ def create_nftoken(cookie_dict, attempts=3):
                         expires //= 1000
                     return {"token": token, "expires_at": expires}, None
 
-                last_error = "No token in Netflix response"
+                last_error = "No token in response"
             elif r.status_code == 403:
                 last_error = "403 Forbidden (cookie expired or weak)"
                 break

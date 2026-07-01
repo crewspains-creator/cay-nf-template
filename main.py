@@ -9,7 +9,7 @@ import requests
 import json
 import re
 from urllib3.exceptions import InsecureRequestWarning
-
+import urllib.parse
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
 # ====================== CONFIG ======================
@@ -184,53 +184,70 @@ def sync_stock_from_db():
     except Exception as e:
         print(f"[Stock sync error] {e}")
 
-# ====================== NETFLIX CHECKER ======================
+# ====================== IMPROVED COOKIE EXTRACTION (SINGLE VERSION) ======================
+
+COOKIE_KEYS = ("NetflixId", "SecureNetflixId", "nfvdid", "OptanonConsent")
+
+def parse_netscape_cookie_line(line):
+    parts = line.strip().split("\t")
+    if len(parts) >= 7:
+        return {parts[5]: parts[6]}
+    return {}
+
+def _decode_cookie_value(value):
+    if isinstance(value, str) and "%" in value:
+        try:
+            return urllib.parse.unquote(value)
+        except Exception:
+            return value
+    return value
+
 def parse_cookie_dict(text):
     """
-    Improved cookie parser (supports Netscape, JSON, and key=value formats).
-    Much better at extracting NetflixId + SecureNetflixId.
+    Robust cookie parser used in both checker.py and Nightflix bot.
+    Supports Netscape, JSON, and key=value formats.
     """
     cookie_dict = {}
-    COOKIE_KEYS = ("NetflixId", "SecureNetflixId", "nfvdid", "OptanonConsent")
 
-    def _decode(val):
-        if isinstance(val, str) and "%" in val:
-            try:
-                from urllib.parse import unquote
-                return unquote(val)
-            except:
-                return val
-        return val
-
-    # 1. Netscape format (tab separated)
-    for line in text.splitlines():
-        line = line.strip()
+    # 1. Netscape format (tab-separated)
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
-        parts = line.split("\t")
-        if len(parts) >= 7:
-            cookie_dict[parts[5]] = parts[6]
+        cookie_dict.update(parse_netscape_cookie_line(line))
 
     # 2. JSON format
     try:
         data = json.loads(text)
-        if isinstance(data, list):
-            for c in data:
-                if c.get("name") in COOKIE_KEYS:
-                    cookie_dict[c["name"]] = _decode(c.get("value"))
-        elif isinstance(data, dict):
+    except (json.JSONDecodeError, TypeError):
+        data = None
+
+    if isinstance(data, list):
+        for cookie in data:
+            name = cookie.get("name")
+            value = cookie.get("value")
+            if name in COOKIE_KEYS and isinstance(value, str):
+                cookie_dict[name] = _decode_cookie_value(value)
+    elif isinstance(data, dict):
+        if any(key in data for key in COOKIE_KEYS):
             for key in COOKIE_KEYS:
-                if key in data:
-                    cookie_dict[key] = _decode(data[key])
-    except:
-        pass
+                value = data.get(key)
+                if isinstance(value, str):
+                    cookie_dict[key] = _decode_cookie_value(value)
+        elif isinstance(data.get("cookies"), list):
+            for cookie in data["cookies"]:
+                name = cookie.get("name")
+                value = cookie.get("value")
+                if name in COOKIE_KEYS and isinstance(value, str):
+                    cookie_dict[name] = _decode_cookie_value(value)
 
     # 3. key=value format fallback
     for key in COOKIE_KEYS:
-        if key not in cookie_dict:
-            match = re.search(rf"{key}=([^;,\s]+)", text, re.IGNORECASE)
-            if match:
-                cookie_dict[key] = _decode(match.group(1))
+        if key in cookie_dict:
+            continue
+        match = re.search(rf"(?<!\w){re.escape(key)}=([^;,\s]+)", text, re.IGNORECASE)
+        if match:
+            cookie_dict[key] = _decode_cookie_value(match.group(1))
 
     return cookie_dict
 
