@@ -538,6 +538,19 @@ def lang_markup():
 
 def country_service_markup(country):
     markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton(f"🎬 Netflix ({country})", callback_data=f"netflix_{country}"),
+        types.InlineKeyboardButton(f"🍿 Prime Video ({country})", callback_data=f"prime_{country}")
+    )
+    markup.add(
+        types.InlineKeyboardButton(f"🦊 Crunchyroll ({country})", callback_data=f"crunchyroll_{country}"),
+        types.InlineKeyboardButton(f"🎵 Spotify ({country})", callback_data=f"spotify_{country}")
+    )
+    markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    return markup
+
+def country_service_markup(country):
+    markup = types.InlineKeyboardMarkup(row_width=2)
     row = []
     if SERVICE_VISIBILITY["netflix"]:
         row.append(types.InlineKeyboardButton(f"🎬 Netflix ({country})", callback_data=f"country_netflix_{country}"))
@@ -782,24 +795,14 @@ def country_handler(message):
         country = message.text.split(maxsplit=1)[1].upper().strip()
         chat_id = message.chat.id
 
-        # Save selected country
-        if chat_id not in USER_DATA:
-            USER_DATA[chat_id] = {}
-        USER_DATA[chat_id]["selected_country"] = country
-
-        # Show Netflix tier selection (exactly like the image)
-        bot.send_message(
-            chat_id,
-            f"🌍 <b>Country: {country}</b>\n\nChoose a tier below:",
-            reply_markup=netflix_tier_markup("en"),
-            parse_mode="HTML"
-        )
+        text = f"🌍 <b>Country: {country}</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\nChoose a system for <b>{country}</b>:"
+        bot.send_message(chat_id, text, reply_markup=country_service_markup(country), parse_mode="HTML")
     except:
         bot.reply_to(message, 
             "🌍 <b>Get Cookies by Country</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "Use: <code>/country IN</code>\n"
-            "Examples: IN · US · BR · FR · DE · ID",
+            "Examples: IN • US • BR • FR • DE • ID",
             parse_mode="HTML"
         )
 
@@ -815,8 +818,8 @@ def admin_command(message):
     )
     bot.send_message(message.chat.id, text, reply_markup=admin_stock_markup(), parse_mode="HTML")
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith(("netflix_", "prime_", "crunchyroll_", "spotify_")) and "_" in call.data)
-def handle_country_service_selection(call):
+@bot.callback_query_handler(func=lambda call: call.data.startswith(("netflix_", "prime_", "crunchyroll_", "spotify_")))
+def handle_country_service(call):
     parts = call.data.split("_", 1)
     service = parts[0]
     country = parts[1].upper()
@@ -832,7 +835,7 @@ def handle_country_service_selection(call):
             netflix_tier_markup_by_country(country)
         )
     else:
-        edit_current_message(call, f"{service.title()} for {country} is coming soon.", main_menu_markup())
+        edit_current_message(call, f"{service.title()} ({country}) coming soon.", main_menu_markup())
 
 @bot.message_handler(func=lambda m: m.chat.id in ADMIN_IDS and m.chat.id in ADMIN_PENDING)
 def admin_set_stock_value(message):
