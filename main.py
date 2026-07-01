@@ -892,7 +892,7 @@ def handle_callback(call):
             f"⚙️ <b>METHOD:</b> <code>Automated Session Validation</code>\n\n"
             f"🕐 <i>Please wait while we establish a live connection...</i>"
         )
-        time.sleep(2)
+        time.sleep(0.6)
 
         # ── Increment usage ──
         user["used"][tier] = user["used"].get(tier, 0) + 1
@@ -954,10 +954,10 @@ def handle_callback(call):
                 f"🔍 <b>Checking Cookie:</b> <code>[Parsing Cookie]</code> ⏳",
                 parse_mode="HTML"
             )
-            time.sleep(1)
+            time.sleep(0.4)
             bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id,
                 text=f"🔑 <b>Checking Cookie:</b> <code>[Authenticating Session]</code> ⏳", parse_mode="HTML")
-            time.sleep(1)
+            time.sleep(0.4)
             bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id,
                 text=f"⚙️ <b>Checking Cookie:</b> <code>[Calling Cay APIs]</code> ⏳", parse_mode="HTML")
 
