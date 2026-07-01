@@ -509,9 +509,9 @@ def main_menu_markup(lang="en"):
 
     # Add 2 per row dynamically
     for i in range(0, len(service_buttons), 3):
-        markup.add(*service_buttons[i:i+3])
+        markup.add(*service_buttons[i:i+2])
 
-    markup.add(
+    markup.row(
         types.InlineKeyboardButton(languages.get_text(lang, "btn_status"), callback_data="status"),
         types.InlineKeyboardButton(languages.get_text(lang, "btn_stock"),  callback_data="stock"),
         types.InlineKeyboardButton(languages.get_text(lang, "btn_help"),   callback_data="help")
@@ -1217,9 +1217,9 @@ def handle_callback(call):
                 detail_text += (
                     f"\n🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                    f"🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
-                    f"📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
-                    f"📺 <a href='{watch_tv}'>Watch on TV</a>\n"
+                    f"🔗 🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
+                    f"📱 📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
+                    f"📺 📺 <a href='{watch_tv}'>Watch on TV</a>\n"
                 )
             else:
                 detail_text += f"\n⚠️ <b>NFTOKEN:</b> <code>Could not generate — cookie may need re-check</code>"
