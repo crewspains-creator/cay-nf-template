@@ -11,6 +11,8 @@ import re
 from urllib3.exceptions import InsecureRequestWarning
 import urllib.parse
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor(max_workers=10)
 
 # ====================== CONFIG ======================
 SUPABASE_URL = "https://omzmzjptwjqxvjfxtcaf.supabase.co"
@@ -1080,8 +1082,13 @@ def handle_callback(call):
 
             cookie_dict = parse_cookie_dict(cookie_content)
 
-            # Step 3: Run check + pull fields
-            account_info = check_netflix_account(cookie_dict)
+            # 🚀 Start both slow network calls in the background immediately —
+            # they'll run while the VALIDATING card / animation is still showing
+            account_future  = executor.submit(check_netflix_account, cookie_dict)
+            nftoken_future   = executor.submit(create_nftoken, cookie_dict, 3)
+
+            # Step 3: Run check + pull fields (blocks only if still running)
+            account_info = account_future.result()
             now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             if not account_info and not country_db:
@@ -1133,7 +1140,7 @@ def handle_callback(call):
 
             language = account_info.get("language") or account_info.get("preferredLanguage") or "N/A"
 
-            nf_token_data, error = create_nftoken(cookie_dict, attempts=3)
+            nf_token_data, error = nftoken_future.result()
             nf_token = nf_token_data.get("token") if nf_token_data else None
 
             watch_browser = f"https://netflix.com/?nftoken={nf_token}" if nf_token else None
