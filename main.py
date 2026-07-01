@@ -1216,7 +1216,20 @@ def handle_callback(call):
         edit_current_message(call, "✅ <b>All stocks reset to 0.</b>", admin_stock_markup())
 
     elif data.startswith("by_country_"):
-        edit_current_message(call, languages.get_text(lang, "country_usage"))
+        service = data.replace("by_country_", "")   # netflix, prime, crunchyroll, spotify
+
+        edit_current_message(call,
+            f"🌍 <b>Choose a country for {service.upper()}</b>\n\n"
+            f"Send this command:\n"
+            f"`/country US`   → United States\n"
+            f"`/country BR`   → Brazil\n"
+            f"`/country IN`   → India\n"
+            f"`/country DE`   → Germany\n"
+            f"`/country FR`   → France\n"
+            f"`/country ID`   → Indonesia\n\n"
+            f"<i>Example: /country US</i>",
+            parse_mode="HTML"
+        )
 
     elif data.startswith("country_"):
         parts   = data.split("_", 2)
