@@ -909,7 +909,7 @@ def handle_callback(call):
         if tier in ("premium", "standard", "basic"):
             import io, re
 
-            # Step 1: Fetch cookie row from Supabase
+            # Step 1: Fetch cookie row from Supabase (same)
             cookie_row = fetch_cookie_from_db(tier)
             if not cookie_row:
                 edit_current_message(call,
@@ -936,7 +936,7 @@ def handle_callback(call):
             country_db = parts[2] if len(parts) > 2 else db_country
             tier_label = tier.upper()
 
-            # Step 2: Show VALIDATING card
+            # Step 2: Show VALIDATING card (same)
             edit_current_message(call,
                 f"🔍 🔍 <b>VALIDATING {tier_label} COOKIE...</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -948,11 +948,12 @@ def handle_callback(call):
 
             cookie_dict = parse_cookie_dict(cookie_content)
 
-            # Step 3: Run check + pull all fields (moved up)
+            # Step 3: Check + pull fields (moved up)
             account_info = check_netflix_account(cookie_dict)
             now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             if not account_info and not country_db:
+                bot.delete_message(chat_id=chat_id, message_id=checking_msg.message_id)
                 edit_current_message(call,
                     f"❌ 💀 <b>NETFLIX {tier_label} — COOKIE DEAD</b>\n"
                     f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -966,7 +967,6 @@ def handle_callback(call):
                 STOCK[tier] += 1
                 return
 
-            # Pull all fields
             email          = account_info.get("email") or "N/A"
             name_acc       = account_info.get("accountOwnerName") or "N/A"
             country_real   = account_info.get("countryOfSignup") or country_db or "N/A"
@@ -1020,7 +1020,7 @@ def handle_callback(call):
             plan_display  = f"{plan_real} [{quality}] [Streams: {streams}]" if streams != "N/A" else plan_real
             profile_label = f"PROFILES ({profile_count})" if profile_count else "PROFILES"
 
-            # Step 4: Show #NETFLIX ACCOUNT DETAILS header (moved up - before animation)
+            # Step 4: Header (moved here - before animation)
             header_text = (
                 f"<pre>"
                 f"#{'=' * 50}\n"
@@ -1052,7 +1052,7 @@ def handle_callback(call):
             )
             bot.send_message(chat_id, header_text, parse_mode="HTML")
 
-            # Step 5: Long animation (moved after header)
+            # Step 5: Long animation (moved here - after header)
             checking_msg = bot.send_message(chat_id,
                 f"🔍 <b>Checking Cookie:</b> <code>[Parsing Cookie]</code> ⏳",
                 parse_mode="HTML"
@@ -1069,7 +1069,22 @@ def handle_callback(call):
             time.sleep(0.3)
             bot.delete_message(chat_id=chat_id, message_id=checking_msg.message_id)
 
-            # Step 6: Show ACCOUNT DETAILS + NFToken links (kept at the end)
+            # Step 6: LIVE confirmation (same position)
+            delivery_markup = types.InlineKeyboardMarkup()
+            delivery_markup.add(types.InlineKeyboardButton(f"🔄 Get Another {tier_label}", callback_data=f"tier_{tier}"))
+            delivery_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+            edit_current_message(call,
+                f"🎉 👑 <b>{tier_label} COOKIE — ✅ LIVE</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📁 <b>DATABASE ID:</b> <code>{public_id}</code>\n"
+                f"📊 <b>HOURLY LIMIT:</b> <code>{used_now} / 3</code>\n"
+                f"🔒 <b>REMAINING SLOTS:</b> <code>{remaining} claims left</code>\n"
+                f"⏱ <b>COOLDOWN PERIOD:</b> <code>1 hour rolling</code>\n\n"
+                f"📤 <b>STATUS:</b> Session verified & active! Details below.",
+                delivery_markup
+            )
+
+            # Step 7: Detail message (same)
             detail_text = (
                 f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
