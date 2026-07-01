@@ -747,13 +747,29 @@ def lang_command(message):
 @bot.message_handler(commands=['country'])
 def country_handler(message):
     try:
-        country = message.text.split(maxsplit=1)[1].upper()
-        text  = f"🌍 <b>Country: {country}</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        text += f"Choose a service for <b>{country}</b>:"
-        bot.send_message(message.chat.id, text, reply_markup=country_service_markup(country), parse_mode="HTML")
-    except Exception:
-        text = "🌍 <b>Get Cookies by Country</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\nUse: /country IN\nExamples: IN · US · BR · FR · DE · ID"
-        bot.reply_to(message, text, parse_mode="HTML")
+        country = message.text.split(maxsplit=1)[1].upper().strip()
+        chat_id = message.chat.id
+
+        # Save selected country
+        if chat_id not in USER_DATA:
+            USER_DATA[chat_id] = {}
+        USER_DATA[chat_id]["selected_country"] = country
+
+        # Show Netflix tier selection (exactly like the image)
+        bot.send_message(
+            chat_id,
+            f"🌍 <b>Country: {country}</b>\n\nChoose a tier below:",
+            reply_markup=netflix_tier_markup("en"),
+            parse_mode="HTML"
+        )
+    except:
+        bot.reply_to(message, 
+            "🌍 <b>Get Cookies by Country</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Use: <code>/country IN</code>\n"
+            "Examples: IN · US · BR · FR · DE · ID",
+            parse_mode="HTML"
+        )
 
 @bot.message_handler(commands=['admin'])
 def admin_command(message):
@@ -910,7 +926,12 @@ def handle_callback(call):
             import io, re
 
             # Step 1: Fetch from Supabase
-            cookie_row = fetch_cookie_from_db(tier)
+            selected_country = USER_DATA.get(chat_id, {}).get("selected_country")
+            cookie_row = fetch_cookie_from_db(tier, country=selected_country)
+
+            # Clear after use
+            if selected_country:
+                USER_DATA[chat_id].pop("selected_country", None)
             if not cookie_row:
                 edit_current_message(call, f"❌ 😔 <b>NETFLIX {tier.upper()} — NO LIVE COOKIES</b>...", types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")))
                 user["used"][tier] = max(0, user["used"][tier] - 1)
