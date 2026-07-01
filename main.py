@@ -509,7 +509,7 @@ def main_menu_markup(lang="en"):
 
     # Add 2 per row dynamically
     for i in range(0, len(service_buttons), 3):
-        markup.add(*service_buttons[i:i+2])
+        markup.add(*service_buttons[i:i+3])
 
     markup.add(
         types.InlineKeyboardButton(languages.get_text(lang, "btn_status"), callback_data="status"),
@@ -1027,7 +1027,7 @@ def handle_callback(call):
             f"⚙️ <b>METHOD:</b> <code>Automated Session Validation</code>\n\n"
             f"🕐 <i>Please wait while we establish a live connection...</i>"
         )
-        time.sleep(0.3)
+        time.sleep(0.1)
 
         # ── Increment usage ──
         user["used"][tier] = user["used"].get(tier, 0) + 1
