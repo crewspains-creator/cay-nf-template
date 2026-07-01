@@ -782,20 +782,45 @@ def country_handler(message):
         country = message.text.split(maxsplit=1)[1].upper().strip()
         chat_id = message.chat.id
 
-        # Save selected country
-        if chat_id not in USER_DATA:
-            USER_DATA[chat_id] = {}
+        USER_DATA.setdefault(chat_id, {})
+        # Check if user came from a specific service's By Country button
+        pending_service = USER_DATA[chat_id].pop("pending_country_service", None)
         USER_DATA[chat_id]["selected_country"] = country
+        lang = get_lang(chat_id)
 
-        # Show Netflix tier selection (exactly like the image)
-        bot.send_message(
-            chat_id,
-            f"🌍 <b>Country: {country}</b>\n\nChoose a system for <b>{country}</b>:",
-            reply_markup=country_service_markup(country),
-            parse_mode="HTML"
-        )
+        if pending_service == "netflix":
+            bot.send_message(chat_id,
+                f"🔽 <b>Choose a Netflix tier for {country}:</b>",
+                reply_markup=netflix_tier_markup_by_country(country),
+                parse_mode="HTML"
+            )
+        elif pending_service == "prime":
+            bot.send_message(chat_id,
+                f"🔽 Choose a tier for <b>Prime Video ({country})</b>:",
+                reply_markup=prime_tier_markup(lang),
+                parse_mode="HTML"
+            )
+        elif pending_service == "crunchyroll":
+            bot.send_message(chat_id,
+                f"🔽 Choose a tier for <b>Crunchyroll ({country})</b>:",
+                reply_markup=crunchyroll_markup(lang),
+                parse_mode="HTML"
+            )
+        elif pending_service == "spotify":
+            bot.send_message(chat_id,
+                f"🔽 Choose a tier for <b>Spotify ({country})</b>:",
+                reply_markup=spotify_markup(lang),
+                parse_mode="HTML"
+            )
+        else:
+            # No pending service = /country typed directly → show all services
+            bot.send_message(chat_id,
+                f"🌍 <b>Country: {country}</b>\n\nChoose a system for <b>{country}</b>:",
+                reply_markup=country_service_markup(country),
+                parse_mode="HTML"
+            )
     except:
-        bot.reply_to(message, 
+        bot.reply_to(message,
             "🌍 <b>Get Cookies by Country</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "Use: <code>/country IN</code>\n"
@@ -1287,7 +1312,9 @@ def handle_callback(call):
         edit_current_message(call, "✅ <b>All stocks reset to 0.</b>", admin_stock_markup())
 
     elif data.startswith("by_country_"):
-        service = data.replace("by_country_", "")  # netflix, prime, etc.
+        service = data.replace("by_country_", "")
+        # Remember which service user came from
+        USER_DATA.setdefault(chat_id, {})["pending_country_service"] = service
         edit_current_message(call,
             f"🌍 <b>Get {service.title()} Cookies by Country</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
