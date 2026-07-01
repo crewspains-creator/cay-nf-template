@@ -40,6 +40,25 @@ def _decode_cookie_value(value):
             return value
     return value
 
+# ====================== HELPER FUNCTION ======================
+def calculate_days_left(next_billing_date):
+    """Calculate how many days until next billing"""
+    if not next_billing_date or next_billing_date in ["N/A", None, ""]:
+        return "N/A"
+    try:
+        from datetime import datetime as dt
+        next_date = dt.strptime(next_billing_date, "%Y-%m-%d")
+        today = dt.now().date()
+        delta = (next_date.date() - today).days
+        if delta > 0:
+            return f"{delta} days"
+        elif delta == 0:
+            return "Today"
+        else:
+            return "Expired"
+    except:
+        return "N/A"
+
 def extract_cookie_dict(text):
     """
     Robust cookie parser.
@@ -1602,6 +1621,17 @@ def extract_info(response_text):
                     r'"quality"\s*:\s*"([^"]+)"',
                 ],
             ),
+            "language": extract_first_match(
+                response_text,
+                [
+                    r'"language"\s*:\s*"([^"]+)"',
+                    r'"preferredLanguage"\s*:\s*"([^"]+)"',
+                    r'"locale"\s*:\s*"([^"]+)"',
+                    r'"preferredLocale"\s*:\s*"([^"]+)"',
+                    r'Language["\s:>]+([A-Za-z\- ]+)',
+                    r'Preferred language["\s:>]+([A-Za-z\- ]+)',
+                ],
+            ),
             "holdStatus": extract_bool_value(
                 response_text,
                 [
@@ -1631,6 +1661,7 @@ def extract_info(response_text):
     extracted.setdefault("paymentMethodType", None)
     extracted.setdefault("paymentMethodExists", None)
     extracted.setdefault("maskedCard", None)
+    extracted.setdefault("language", None)
     extracted.setdefault("holdStatus", None)
     extracted.setdefault("emailVerified", None)
     extracted.setdefault("phoneNumber", None)

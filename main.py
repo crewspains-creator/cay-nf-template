@@ -892,7 +892,7 @@ def handle_callback(call):
             f"⚙️ <b>METHOD:</b> <code>Automated Session Validation</code>\n\n"
             f"🕐 <i>Please wait while we establish a live connection...</i>"
         )
-        time.sleep(0.6)
+        time.sleep(0.4)
 
         # ── Increment usage ──
         user["used"][tier] = user["used"].get(tier, 0) + 1
@@ -1044,6 +1044,21 @@ def handle_callback(call):
             plan_display  = f"{plan_real} [{quality}] [Streams: {streams}]" if streams != "N/A" else plan_real
             profile_label = f"PROFILES ({profile_count})" if profile_count else "PROFILES"
 
+            # === Calculate Days Left ===
+            days_left = "N/A"
+            try:
+                if next_bill and next_bill != "N/A":
+                    from datetime import datetime as dt
+                    next_date = dt.strptime(next_bill, "%Y-%m-%d")
+                    today = dt.now().date()
+                    delta = (next_date.date() - today).days
+                    days_left = f"{delta} days" if delta > 0 else "Expired"
+            except:
+                days_left = "N/A"
+
+            # === Language (try to get real value) ===
+            language = account_info.get("language") or account_info.get("preferredLanguage") or "N/A"
+
             header_text = (
                 f"<pre>"
                 f"#{'=' * 50}\n"
@@ -1062,9 +1077,12 @@ def handle_callback(call):
                 f"#PAYMENT METHOD   : {payment}\n"
                 f"#SOURCE           : Netflix\n"
                 f"#EXPIRE           : {next_bill}\n"
-                f"#DAYS LEFT        : N/A\n"
-                f"#PROFILE PIN      : N/A\n"
-                f"#LANGUAGE         : N/A\n"
+                f"#DAYS LEFT        : {days_left}\n"
+                f"#LANGUAGE         : {language}\n"
+                f"#VIDEO QUALITY    : {quality}\n"
+                f"#PLAN PRICE       : {plan_price}\n"
+                f"#HOLD STATUS      : {hold_status}\n"
+                f"#EXTRA MEMBERS    : {extra_member}\n"
                 f"#CHECKED AT       : {now_str}\n"
                 f"#{'=' * 50}\n\n"
                 f"{cookie_content.strip()}"
