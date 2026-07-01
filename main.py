@@ -456,21 +456,23 @@ def get_user_data(chat_id):
 
 # ====================== KEYBOARDS ======================
 def main_menu_markup(lang="en"):
-    markup = types.InlineKeyboardMarkup(row_width=3)
-    row1 = []
+    markup = types.InlineKeyboardMarkup(row_width=2)
+
+    # Collect all visible service buttons dynamically
+    service_buttons = []
     if SERVICE_VISIBILITY["netflix"]:
-        row1.append(types.InlineKeyboardButton("🎬 Netflix", callback_data="netflix"))
+        service_buttons.append(types.InlineKeyboardButton("🎬 Netflix", callback_data="netflix"))
     if SERVICE_VISIBILITY["prime"]:
-        row1.append(types.InlineKeyboardButton("🍿 Prime Video", callback_data="prime"))
-    if row1:
-        markup.add(*row1)
-    row2 = []
+        service_buttons.append(types.InlineKeyboardButton("🍿 Prime Video", callback_data="prime"))
     if SERVICE_VISIBILITY["crunchyroll"]:
-        row2.append(types.InlineKeyboardButton("🦊 Crunchyroll", callback_data="crunchyroll"))
+        service_buttons.append(types.InlineKeyboardButton("🦊 Crunchyroll", callback_data="crunchyroll"))
     if SERVICE_VISIBILITY["spotify"]:
-        row2.append(types.InlineKeyboardButton("🎵 Spotify", callback_data="spotify"))
-    if row2:
-        markup.add(*row2)
+        service_buttons.append(types.InlineKeyboardButton("🎵 Spotify", callback_data="spotify"))
+
+    # Add 2 per row dynamically
+    for i in range(0, len(service_buttons), 2):
+        markup.add(*service_buttons[i:i+2])
+
     markup.add(
         types.InlineKeyboardButton(languages.get_text(lang, "btn_status"), callback_data="status"),
         types.InlineKeyboardButton(languages.get_text(lang, "btn_stock"),  callback_data="stock"),
