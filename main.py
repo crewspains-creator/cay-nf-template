@@ -790,8 +790,8 @@ def country_handler(message):
         # Show Netflix tier selection (exactly like the image)
         bot.send_message(
             chat_id,
-            f"🌍 <b>Country: {country}</b>\n\nChoose a tier below:",
-            reply_markup=netflix_tier_markup("en"),
+            f"🌍 <b>Country: {country}</b>\n\nChoose a system for <b>{country}</b>:",
+            reply_markup=country_service_markup(country),
             parse_mode="HTML"
         )
     except:
@@ -1299,56 +1299,31 @@ def handle_callback(call):
 
     elif data.startswith("country_"):
         parts   = data.split("_", 2)
-        service = parts[1]           # netflix, prime, crunchyroll, spotify
-        country = parts[2].upper()   # US, BR, PH, IN, etc.
+        service = parts[1]
+        country = parts[2].upper()
 
-        edit_current_message(call, f"🔍 Searching <b>{service.title()}</b> cookies for <b>{country}</b>...")
+        # Save country so tier handler uses it
+        USER_DATA.setdefault(chat_id, {})["selected_country"] = country
 
-        try:
-            # Map service to prefix used in service_type column
-            service_prefix = {
-                "netflix":     "Netflix",
-                "prime":       "Primevideo",
-                "crunchyroll": "Crunchyroll",
-                "spotify":     "Spotify"
-            }.get(service, service)
-
-            # Query: filter by service_type prefix + exact country + remaining > 0
-            result = supabase.table("vamt_keys") \
-                .select("*") \
-                .like("service_type", f"{service_prefix}%") \
-                .eq("country", country) \
-                .gt("remaining", 0) \
-                .order("last_used_at", desc=False) \
-                .limit(1) \
-                .execute()
-
-            if result.data:
-                row = result.data[0]
-
-                # Optional: update last_used_at
-                supabase.table("vamt_keys") \
-                    .update({"last_used_at": datetime.now(timezone.utc).isoformat()}) \
-                    .eq("key_id", row["key_id"]) \
-                    .execute()
-
-                edit_current_message(call,
-                    f"✅ <b>{service.upper()} COOKIE FOUND ({country})!</b>\n\n"
-                    f"📁 Database ID: <code>{row.get('public_id', 'N/A')}</code>\n"
-                    f"📦 Service: <code>{row.get('service_type')}</code>",
-                    main_menu_markup(lang)
-                )
-            else:
-                edit_current_message(call,
-                    f"❌ <b>No {service.title()} cookies available for {country}.</b>",
-                    main_menu_markup(lang)
-                )
-
-        except Exception as e:
-            print(f"[Country Error] {e}")
+        if service == "netflix":
             edit_current_message(call,
-                f"❌ Something went wrong while checking {country}.",
-                main_menu_markup(lang)
+                f"🔽 <b>Choose a tier below:</b>",
+                netflix_tier_markup_by_country(country)
+            )
+        elif service == "prime":
+            edit_current_message(call,
+                f"🔽 Choose a tier for <b>Prime Video ({country})</b>:",
+                prime_tier_markup(lang)
+            )
+        elif service == "crunchyroll":
+            edit_current_message(call,
+                f"🔽 Choose a tier for <b>Crunchyroll ({country})</b>:",
+                crunchyroll_markup(lang)
+            )
+        elif service == "spotify":
+            edit_current_message(call,
+                f"🔽 Choose a tier for <b>Spotify ({country})</b>:",
+                spotify_markup(lang)
             )
 
 # ====================== RUN ======================
