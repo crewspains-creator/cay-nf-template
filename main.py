@@ -750,7 +750,7 @@ def build_stock(lang="en"):
     if SERVICE_VISIBILITY["spotify"]:
         items += [("spotify","🎵 SPOTIFY")]
 
-    MAX_STOCK = 2000
+    MAX_STOCK = 600
     BAR_BLOCKS = 10
 
     for t, label in items:
