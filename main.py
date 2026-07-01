@@ -1287,11 +1287,13 @@ def handle_callback(call):
         edit_current_message(call, "✅ <b>All stocks reset to 0.</b>", admin_stock_markup())
 
     elif data.startswith("by_country_"):
+        service = data.replace("by_country_", "")  # netflix, prime, etc.
         edit_current_message(call,
-            f"🌍 <b>Get Cookies by Country</b>\n"
+            f"🌍 <b>Get {service.title()} Cookies by Country</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
             f"Use: <code>/country IN</code>\n"
-            f"Examples: IN • US • BR • FR • DE • ID",
+            f"Examples: IN • US • BR • FR • DE • ID\n\n"
+            f"<i>Country will be applied to {service.title()} only.</i>",
             types.InlineKeyboardMarkup().add(
                 types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")
             )
