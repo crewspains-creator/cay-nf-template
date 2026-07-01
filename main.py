@@ -1145,11 +1145,12 @@ def handle_callback(call):
 
             cookie_dict = parse_cookie_dict(cookie_content)
 
-            # 🚀 Start both slow network calls in the background immediately
+            # 🚀 Start both slow network calls in the background immediately —
+            # they'll run while the VALIDATING card / animation is still showing
             account_future  = executor.submit(check_netflix_account, cookie_dict)
             nftoken_future   = executor.submit(create_nftoken, cookie_dict, 3)
 
-            # Step 3: Wait ONLY for account_info (blocks only if still running)
+            # Step 3: Run check + pull fields (blocks only if still running)
             account_info = account_future.result()
             now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -1162,7 +1163,7 @@ def handle_callback(call):
                 STOCK[tier] += 1
                 return
 
-            # All field pulling
+            # All field pulling (email, name_acc, days_left, language, nf_token, etc.)
             email          = account_info.get("email") or "N/A"
             name_acc       = account_info.get("accountOwnerName") or "N/A"
             country_real   = account_info.get("countryOfSignup") or country_db or "N/A"
@@ -1202,14 +1203,19 @@ def handle_callback(call):
 
             language = account_info.get("language") or account_info.get("preferredLanguage") or "N/A"
 
+            nf_token_data, error = nftoken_future.result()
+            nf_token = nf_token_data.get("token") if nf_token_data else None
+
+            watch_browser = f"https://netflix.com/?nftoken={nf_token}" if nf_token else None
+            watch_mobile  = f"https://netflix.com/unsupported?nftoken={nf_token}" if nf_token else None
+            watch_tv      = f"https://netflix.com/t/smarttv?nftoken={nf_token}" if nf_token else None
+
             plan_display = f"{plan_real} [{quality}] [Streams: {streams}]" if streams != "N/A" else plan_real
             profile_label = f"PROFILES ({profile_count})" if profile_count else "PROFILES"
             extra_display = "Yes" if str(extra_member).lower() not in ("n/a", "false", "none", "", "no") else "No"
             db_filename = f"[{tier.capitalize()}] [1 payments] [extra {extra_display}] [{country_real}] [{email}] [Tested By caydigitals].txt"
 
-            # ── FIRE ALL THREE IMMEDIATELY, NO WAITING, NO ANIMATION ──
-
-            # 1) #NETFLIX ACCOUNT DETAILS header — sent right away
+            # Step 4: Show #NETFLIX ACCOUNT DETAILS header
             header_text = (
                 f"<pre>"
                 f"#{'=' * 50}\n"
@@ -1241,7 +1247,18 @@ def handle_callback(call):
             )
             bot.send_message(chat_id, header_text, parse_mode="HTML")
 
-            # 2) LIVE confirmation card — sent right away, same moment
+            # Step 5: Long animation
+            checking_msg = bot.send_message(chat_id, f"🔍 <b>Checking Cookie:</b> <code>[Parsing Cookie]</code> ⏳", parse_mode="HTML")
+            time.sleep(0.3)
+            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id, text=f"🔑 <b>Checking Cookie:</b> <code>[Authenticating Session]</code> ⏳", parse_mode="HTML")
+            time.sleep(0.3)
+            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id, text=f"⚙️ <b>Checking Cookie:</b> <code>[Calling Cay APIs]</code> ⏳", parse_mode="HTML")
+            time.sleep(0.3)
+            bot.edit_message_text(chat_id=chat_id, message_id=checking_msg.message_id, text=f"🔗 <b>Checking Cookie:</b> <code>[Building Watch Links]</code> ⏳", parse_mode="HTML")
+            time.sleep(0.3)
+            bot.delete_message(chat_id=chat_id, message_id=checking_msg.message_id)
+
+            # Step 6: Show ✅ LIVE confirmation (this is what you wanted to keep)
             delivery_markup = types.InlineKeyboardMarkup()
             delivery_markup.add(types.InlineKeyboardButton(f"🔄 Get Another {tier_label}", callback_data=f"tier_{tier}"))
             delivery_markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
@@ -1256,7 +1273,7 @@ def handle_callback(call):
                 delivery_markup
             )
 
-            # 3) ACCOUNT DETAILS — sent right away, NFToken links show "Generating..."
+            # Step 7: Show ACCOUNT DETAILS + NFToken links
             detail_text = (
                 f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -1264,50 +1281,20 @@ def handle_callback(call):
                 f"🌍 <b>COUNTRY:</b> <code>{country_real}</code>\n"
                 f"📅 <b>MEMBER SINCE:</b> <code>{member_since_display}</code>\n"
                 f"🎭 <b>{profile_label}:</b> <code>{profiles}</code>\n"
-                f"\n🔑 ⏳ <b>NFTOKEN WATCH LINKS:</b> <code>Generating...</code>"
             )
-            detail_msg = bot.send_message(chat_id, detail_text, parse_mode="HTML", disable_web_page_preview=True)
 
-            # ── NFToken finishes independently in the background, edits detail_msg when ready ──
-            def _finish_nftoken_and_update(msg_chat_id, msg_id, future):
-                nf_token_data, error = future.result()
-                nf_token = nf_token_data.get("token") if nf_token_data else None
-
-                if nf_token:
-                    watch_browser = f"https://netflix.com/?nftoken={nf_token}"
-                    watch_mobile  = f"https://netflix.com/unsupported?nftoken={nf_token}"
-                    watch_tv      = f"https://netflix.com/t/smarttv?nftoken={nf_token}"
-                    links_block = (
-                        f"\n🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
-                        f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🔗 🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
-                        f"📱 📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
-                        f"📺 📺 <a href='{watch_tv}'>Watch on TV</a>\n"
-                    )
-                else:
-                    links_block = f"\n⚠️ <b>NFTOKEN:</b> <code>Could not generate — cookie may need re-check</code>"
-
-                updated_text = (
-                    f"📋 📋 <b>ACCOUNT DETAILS</b>\n"
-                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-                    f"📧 <b>EMAIL:</b> <code>{email}</code>\n"
-                    f"🌍 <b>COUNTRY:</b> <code>{country_real}</code>\n"
-                    f"📅 <b>MEMBER SINCE:</b> <code>{member_since_display}</code>\n"
-                    f"🎭 <b>{profile_label}:</b> <code>{profiles}</code>\n"
-                    f"{links_block}"
+            if nf_token:
+                detail_text += (
+                    f"\n🔑 ✅ <b>NFTOKEN WATCH LINKS:</b>\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"🔗 🔗 <a href='{watch_browser}'>Watch in Browser</a>\n"
+                    f"📱 📱 <a href='{watch_mobile}'>Watch on Mobile</a>\n"
+                    f"📺 📺 <a href='{watch_tv}'>Watch on TV</a>\n"
                 )
-                try:
-                    bot.edit_message_text(
-                        chat_id=msg_chat_id,
-                        message_id=msg_id,
-                        text=updated_text,
-                        parse_mode="HTML",
-                        disable_web_page_preview=True
-                    )
-                except Exception as e:
-                    print(f"[NFToken edit error] {e}")
+            else:
+                detail_text += f"\n⚠️ <b>NFTOKEN:</b> <code>Could not generate — cookie may need re-check</code>"
 
-            executor.submit(_finish_nftoken_and_update, chat_id, detail_msg.message_id, nftoken_future)
+            bot.send_message(chat_id, detail_text, parse_mode="HTML", disable_web_page_preview=True)
 
         # ════════════════════════════════════════
         # ── PRIME VIDEO ──
