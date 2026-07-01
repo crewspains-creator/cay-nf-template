@@ -885,6 +885,63 @@ def admin_command(message):
     )
     bot.send_message(message.chat.id, text, reply_markup=admin_stock_markup(), parse_mode="HTML")
 
+@bot.message_handler(commands=['resetuser'])
+def reset_user_command(message):
+    if message.chat.id not in ADMIN_IDS:
+        return
+
+    try:
+        args = message.text.split()
+        if len(args) != 3:
+            raise ValueError
+
+        target_id = int(args[1])
+        tier_arg  = args[2].lower()
+
+        valid_tiers = ("premium", "standard", "basic")
+        if tier_arg == "all":
+            tiers_to_reset = valid_tiers
+        elif tier_arg in valid_tiers:
+            tiers_to_reset = (tier_arg,)
+        else:
+            raise ValueError
+
+        # Make sure target user's data is loaded into memory
+        target_data = get_user_data(target_id)
+
+        reset_list = []
+        for t in tiers_to_reset:
+            target_data["used"][t] = 0
+            target_data["tier_reset"][t] = None
+            save_user_usage_to_db(target_id, t, 0, None)
+            reset_list.append(t.upper())
+
+        bot.send_message(
+            message.chat.id,
+            f"✅ <b>Reset complete!</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"👤 <b>User ID:</b> <code>{target_id}</code>\n"
+            f"🎯 <b>Tier(s) reset:</b> <code>{', '.join(reset_list)}</code>\n"
+            f"📊 <b>Usage:</b> <code>0/3</code> for all reset tiers",
+            parse_mode="HTML"
+        )
+
+    except ValueError:
+        bot.reply_to(
+            message,
+            "🛠 <b>Reset User Attempts</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Use: <code>/resetuser [user_id] [tier]</code>\n\n"
+            "<b>Tier options:</b>\n"
+            "• <code>premium</code>\n"
+            "• <code>standard</code>\n"
+            "• <code>basic</code>\n"
+            "• <code>all</code> — resets premium, standard & basic\n\n"
+            "<b>Examples:</b>\n"
+            "<code>/resetuser 123456789 premium</code>\n"
+            "<code>/resetuser 123456789 all</code>",
+            parse_mode="HTML"
+        )
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith(("netflix_", "prime_", "crunchyroll_", "spotify_")) and "_" in call.data)
 def handle_country_service_selection(call):
     parts = call.data.split("_", 1)
