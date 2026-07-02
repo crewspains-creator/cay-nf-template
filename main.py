@@ -1255,13 +1255,7 @@ def admin_set_stock_value(message):
 def handle_callback(call):
     data = call.data
 
-    # ── LICENCE GATE ──────────────────────────────────────────
-    if data != "noop" and not is_licensed(chat_id):
-        bot.answer_callback_query(call.id, "🔐 Access restricted. Use /activate <key>", show_alert=True)
-        return
-    # ──────────────────────────────────────────────────────────
-
-    # ── Answer immediately to prevent "query too old" error ──
+ ── Answer immediately to prevent "query too old" error ──
     # (admin_toggle_ answers later with custom toast text instead)
     if not data.startswith("admin_toggle_"):
         try:
@@ -1272,6 +1266,11 @@ def handle_callback(call):
     chat_id = call.message.chat.id
     user    = get_user_data(chat_id)
     lang    = user.get("lang", "en")
+
+    # ── LICENCE GATE ──
+    if data != "noop" and not is_licensed(chat_id):
+        bot.answer_callback_query(call.id, "🔐 Access restricted. Use /activate <key>", show_alert=True)
+        return
 
     if data == "main_menu":
         text, markup = build_home(chat_id, lang)
