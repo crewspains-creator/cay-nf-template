@@ -1255,7 +1255,7 @@ def admin_set_stock_value(message):
 def handle_callback(call):
     data = call.data
 
- ── Answer immediately to prevent "query too old" error ──
+    #── Answer immediately to prevent "query too old" error ──
     # (admin_toggle_ answers later with custom toast text instead)
     if not data.startswith("admin_toggle_"):
         try:
