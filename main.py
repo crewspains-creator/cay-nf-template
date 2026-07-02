@@ -1248,7 +1248,7 @@ def handle_country_service_selection(call):
 @bot.message_handler(func=lambda m: m.chat.id in ADMIN_IDS and m.chat.id in ADMIN_PENDING)
 def admin_set_stock_value(message):
     chat_id = message.chat.id
-tier = ADMIN_PENDING.pop(chat_id, None)
+    tier = ADMIN_PENDING.pop(chat_id, None)
     if not tier:
         return
 
