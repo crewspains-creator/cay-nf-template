@@ -34,10 +34,10 @@ ADMIN_IDS = [7399488750]
 ADMIN_PENDING = {}
 
 # ====================== LICENSE CACHE ======================
-# In-memory set of chat_ids with confirmed active licenses
-# Populated on first check, cleared on revoke
 LICENSE_CACHE: set = set()
-
+PUBLIC_COMMANDS = {"/status", "/stock", "/country", "/lang"}
+PUBLIC_CALLBACKS = {"status", "stock", "language", "main_menu", "noop"}
+PUBLIC_CALLBACK_PREFIXES = ("lang_",)
 
 USER_DATA = {}
 STOCK = {
@@ -1760,10 +1760,6 @@ if __name__ == "__main__":
     bot.set_my_commands([
         types.BotCommand("start",   "Open the main menu"),
         types.BotCommand("activate",   "Activate your licence key"),
-        types.BotCommand("admin",   "Admin panel (owner only)"),
-        types.BotCommand("genkey",     "Generate a licence key (admin)"),  # ← ADD
-        types.BotCommand("revokekey",  "Revoke a licence key (admin)"),    # ← ADD
-        types.BotCommand("listkeys",   "List all licence keys (admin)"),
         types.BotCommand("status",  "Check your usage limits"),
         types.BotCommand("stock",   "View available cookie stock"),
         types.BotCommand("country", "Get cookies for a specific country"),
