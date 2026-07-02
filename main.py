@@ -281,8 +281,6 @@ def is_licensed(chat_id: int) -> bool:
     """Check if a user has a valid active license. Admins always pass."""
     if chat_id in ADMIN_IDS:
         return True
-    if chat_id in LICENSE_CACHE:
-        return True
     # DB fallback (first time or after restart)
     try:
         result = supabase.table("nightflix_bot_licenses") \
@@ -1334,7 +1332,7 @@ def handle_callback(call):
 
     elif data == "admin_keys" and chat_id in ADMIN_IDS:
         edit_current_message(call,
-            "🔑 <b>LICENCE KEY MANAGER</b>\n"
+            "🔑 <b>Generate License Key</b>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
             "Tap a duration to generate a new key.\n"
             "Or list / revoke existing keys below.",
