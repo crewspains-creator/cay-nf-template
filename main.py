@@ -971,18 +971,25 @@ def start_command(message):
 
 @bot.message_handler(commands=['status'])
 def status_command(message):
+    if not is_licensed(message.chat.id):
+        return
     lang = get_lang(message.chat.id)
+
     text, markup = build_status(message.chat.id, lang)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 
 @bot.message_handler(commands=['stock'])
 def stock_command(message):
+    if not is_licensed(message.chat.id):
+        return
     lang = get_lang(message.chat.id)
     text, markup = build_stock(lang)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
 
 @bot.message_handler(commands=['lang'])
 def lang_command(message):
+    if not is_licensed(message.chat.id):
+        return
     lang = get_lang(message.chat.id)
     text, markup = build_lang(lang)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
@@ -1025,6 +1032,8 @@ def activate_command(message):
 
 @bot.message_handler(commands=['country'])
 def country_handler(message):
+    if not is_licensed(message.chat.id):
+        return
     try:
         country = message.text.split(maxsplit=1)[1].upper().strip()
         chat_id = message.chat.id
@@ -1755,14 +1764,5 @@ if __name__ == "__main__":
         print("✅ Webhook deleted")
     except Exception as e:
         print(f"⚠️ delete_webhook failed: {e} — continuing anyway")
-
     time.sleep(1)
-    bot.set_my_commands([
-        types.BotCommand("start",   "Open the main menu"),
-        types.BotCommand("activate",   "Activate your licence key"),
-        types.BotCommand("status",  "Check your usage limits"),
-        types.BotCommand("stock",   "View available cookie stock"),
-        types.BotCommand("country", "Get cookies for a specific country"),
-        types.BotCommand("lang",    "Change language / Cambiar idioma"),
-    ])
     bot.infinity_polling(timeout=60, long_polling_timeout=60)
