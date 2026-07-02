@@ -33,6 +33,12 @@ bot = telebot.TeleBot(TOKEN)
 ADMIN_IDS = [7399488750]
 ADMIN_PENDING = {}
 
+# ====================== LICENSE CACHE ======================
+# In-memory set of chat_ids with confirmed active licenses
+# Populated on first check, cleared on revoke
+LICENSE_CACHE: set = set()
+
+
 USER_DATA = {}
 STOCK = {
     "premium":     0,
@@ -197,6 +203,155 @@ def push_visibility_to_db(service, value):
         }).execute()
     except Exception as e:
         print(f"[Visibility push error] {e}")
+
+# ====================== LICENSE HELPERS ======================
+import secrets, string
+
+def _gen_key(length=20):
+    """Generate a random uppercase alphanumeric license key with dashes."""
+    chars = string.ascii_uppercase + string.digits
+    raw = ''.join(secrets.choice(chars) for _ in range(length))
+    return '-'.join(raw[i:i+5] for i in range(0, length, 5))  # e.g. ABCDE-12345-FGHIJ-67890
+
+def create_license_key(days: int = 30) -> str:
+    """Create a new license key in Supabase. days=0 means lifetime."""
+    key = _gen_key()
+    expires_at = None
+    if days > 0:
+        expires_at = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+    supabase.table("nightflix_bot_licenses").insert({
+        "key": key,
+        "is_active": True,
+        "expires_at": expires_at,
+        "assigned_to": None,
+        "activated_at": None,
+    }).execute()
+    return key
+
+def activate_license(chat_id: int, key: str) -> tuple[bool, str]:
+    """
+    Try to activate a license key for a user.
+    Returns (success, message).
+    """
+    # Already licensed?
+    if is_licensed(chat_id):
+        return False, "already_active"
+
+    key = key.strip().upper()
+    try:
+        result = supabase.table("nightflix_bot_licenses") \
+            .select("*") \
+            .eq("key", key) \
+            .eq("is_active", True) \
+            .execute()
+    except Exception as e:
+        print(f"[License activate error] {e}")
+        return False, "db_error"
+
+    if not result.data:
+        return False, "invalid"
+
+    row = result.data[0]
+
+    # Already taken by someone else?
+    if row.get("assigned_to") and row["assigned_to"] != chat_id:
+        return False, "taken"
+
+    # Check expiry
+    expires_at = row.get("expires_at")
+    if expires_at:
+        exp = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        if exp < datetime.now(timezone.utc):
+            return False, "expired"
+
+    # Assign to this user
+    try:
+        supabase.table("nightflix_bot_licenses").update({
+            "assigned_to": chat_id,
+            "activated_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("key", key).execute()
+    except Exception as e:
+        print(f"[License assign error] {e}")
+        return False, "db_error"
+
+    LICENSE_CACHE.add(chat_id)
+    return True, "ok"
+
+def is_licensed(chat_id: int) -> bool:
+    """Check if a user has a valid active license. Admins always pass."""
+    if chat_id in ADMIN_IDS:
+        return True
+    if chat_id in LICENSE_CACHE:
+        return True
+    # DB fallback (first time or after restart)
+    try:
+        result = supabase.table("nightflix_bot_licenses") \
+            .select("key, expires_at, is_active") \
+            .eq("assigned_to", chat_id) \
+            .eq("is_active", True) \
+            .execute()
+        for row in result.data:
+            exp = row.get("expires_at")
+            if exp:
+                exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00"))
+                if exp_dt < datetime.now(timezone.utc):
+                    continue  # expired key
+            LICENSE_CACHE.add(chat_id)
+            return True
+    except Exception as e:
+        print(f"[is_licensed error] {e}")
+    return False
+
+def revoke_license_by_key(key: str) -> tuple[bool, int | None]:
+    """Revoke a key; returns (success, evicted_chat_id)."""
+    key = key.strip().upper()
+    try:
+        result = supabase.table("nightflix_bot_licenses") \
+            .select("assigned_to") \
+            .eq("key", key) \
+            .execute()
+        evicted = result.data[0]["assigned_to"] if result.data else None
+        supabase.table("nightflix_bot_licenses") \
+            .update({"is_active": False}) \
+            .eq("key", key) \
+            .execute()
+        if evicted:
+            LICENSE_CACHE.discard(evicted)
+        return True, evicted
+    except Exception as e:
+        print(f"[revoke_license error] {e}")
+        return False, None
+
+def list_licenses(limit=20) -> list:
+    try:
+        result = supabase.table("nightflix_bot_licenses") \
+            .select("key, assigned_to, expires_at, is_active, activated_at") \
+            .order("id", desc=True) \
+            .limit(limit) \
+            .execute()
+        return result.data
+    except Exception as e:
+        print(f"[list_licenses error] {e}")
+        return []
+
+def _license_gate(chat_id: int, send_fn) -> bool:
+    """
+    Returns True if user may proceed.
+    If not licensed, sends the activation prompt and returns False.
+    """
+    if is_licensed(chat_id):
+        return True
+    send_fn(
+        chat_id,
+        "🔐 <b>ACCESS RESTRICTED</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "This bot requires a valid <b>licence key</b> to use.\n\n"
+        "👉 Enter your key with:\n"
+        "<code>/activate XXXXX-XXXXX-XXXXX-XXXXX</code>\n\n"
+        "📩 Contact the admin to obtain a key.",
+        parse_mode="HTML"
+    )
+    return False
 
 def load_user_usage_from_db(chat_id):
     try:
@@ -808,6 +963,8 @@ def get_lang(chat_id):
 # ====================== COMMANDS ======================
 @bot.message_handler(commands=['start'])
 def start_command(message):
+    if not _license_gate(message.chat.id, bot.send_message):
+        return
     lang = get_lang(message.chat.id)
     text, markup = build_home(message.chat.id, lang)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
@@ -829,6 +986,42 @@ def lang_command(message):
     lang = get_lang(message.chat.id)
     text, markup = build_lang(lang)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode="HTML")
+
+@bot.message_handler(commands=['activate'])
+def activate_command(message):
+    chat_id = message.chat.id
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        bot.send_message(
+            chat_id,
+            "🔑 <b>Activate your licence key</b>\n\n"
+            "Usage: <code>/activate XXXXX-XXXXX-XXXXX-XXXXX</code>",
+            parse_mode="HTML"
+        )
+        return
+
+    key = parts[1].strip()
+    success, reason = activate_license(chat_id, key)
+
+    if success:
+        lang = get_lang(chat_id)
+        bot.send_message(
+            chat_id,
+            "✅ <b>Licence activated!</b>\n\n"
+            "Welcome! You now have full access to the bot. 🎉",
+            parse_mode="HTML"
+        )
+        text, markup = build_home(chat_id, lang)
+        bot.send_message(chat_id, text, reply_markup=markup, parse_mode="HTML")
+    else:
+        msgs = {
+            "invalid":       "❌ <b>Invalid key.</b> Please check the key and try again.",
+            "taken":         "⚠️ <b>Key already in use</b> by another account.",
+            "expired":       "⌛ <b>Key expired.</b> Please contact admin for a new key.",
+            "already_active":"✅ Your licence is already active. Use /start to begin.",
+            "db_error":      "🔴 A database error occurred. Please try again shortly.",
+        }
+        bot.send_message(chat_id, msgs.get(reason, "❌ Activation failed."), parse_mode="HTML")
 
 @bot.message_handler(commands=['country'])
 def country_handler(message):
@@ -951,6 +1144,63 @@ def reset_user_command(message):
             parse_mode="HTML"
         )
 
+@bot.message_handler(commands=['genkey'])
+def genkey_command(message):
+    if message.chat.id not in ADMIN_IDS:
+        return
+    parts = message.text.split(maxsplit=1)
+    try:
+        days = int(parts[1]) if len(parts) > 1 else 30
+    except ValueError:
+        bot.reply_to(message, "Usage: /genkey [days]  (0 = lifetime)")
+        return
+
+    key = create_license_key(days)
+    expiry = f"{days} days" if days > 0 else "Lifetime ♾️"
+    bot.send_message(
+        message.chat.id,
+        f"🔑 <b>New licence key generated</b>\n\n"
+        f"<code>{key}</code>\n\n"
+        f"⏳ <b>Validity:</b> {expiry}\n"
+        f"📋 Copy the key above and share it with the user.",
+        parse_mode="HTML"
+    )
+
+@bot.message_handler(commands=['revokekey'])
+def revokekey_command(message):
+    if message.chat.id not in ADMIN_IDS:
+        return
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        bot.reply_to(message, "Usage: /revokekey XXXXX-XXXXX-XXXXX-XXXXX")
+        return
+
+    key = parts[1].strip()
+    ok, evicted = revoke_license_by_key(key)
+    if ok:
+        note = f" (user <code>{evicted}</code> kicked out)" if evicted else ""
+        bot.send_message(message.chat.id, f"✅ Key <code>{key}</code> revoked.{note}", parse_mode="HTML")
+    else:
+        bot.send_message(message.chat.id, "❌ Revoke failed — key not found or DB error.")
+
+@bot.message_handler(commands=['listkeys'])
+def listkeys_command(message):
+    if message.chat.id not in ADMIN_IDS:
+        return
+    rows = list_licenses(limit=25)
+    if not rows:
+        bot.send_message(message.chat.id, "No licence keys found.")
+        return
+
+    lines = ["🗝 <b>Recent licence keys</b>\n"]
+    for r in rows:
+        status = "✅" if r["is_active"] else "❌"
+        assigned = f"user <code>{r['assigned_to']}</code>" if r["assigned_to"] else "unassigned"
+        exp = r["expires_at"][:10] if r.get("expires_at") else "lifetime"
+        lines.append(f"{status} <code>{r['key']}</code>\n   └ {assigned} · exp: {exp}")
+
+    bot.send_message(message.chat.id, "\n".join(lines), parse_mode="HTML")
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith(("netflix_", "prime_", "crunchyroll_", "spotify_")) and "_" in call.data)
 def handle_country_service_selection(call):
     parts = call.data.split("_", 1)
@@ -995,6 +1245,12 @@ def admin_set_stock_value(message):
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
     data = call.data
+
+    # ── LICENCE GATE ──────────────────────────────────────────
+    if data != "noop" and not is_licensed(chat_id):
+        bot.answer_callback_query(call.id, "🔐 Access restricted. Use /activate <key>", show_alert=True)
+        return
+    # ──────────────────────────────────────────────────────────
 
     # ── Answer immediately to prevent "query too old" error ──
     # (admin_toggle_ answers later with custom toast text instead)
@@ -1503,7 +1759,11 @@ if __name__ == "__main__":
     time.sleep(1)
     bot.set_my_commands([
         types.BotCommand("start",   "Open the main menu"),
+        types.BotCommand("activate",   "Activate your licence key"),
         types.BotCommand("admin",   "Admin panel (owner only)"),
+        types.BotCommand("genkey",     "Generate a licence key (admin)"),  # ← ADD
+        types.BotCommand("revokekey",  "Revoke a licence key (admin)"),    # ← ADD
+        types.BotCommand("listkeys",   "List all licence keys (admin)"),
         types.BotCommand("status",  "Check your usage limits"),
         types.BotCommand("stock",   "View available cookie stock"),
         types.BotCommand("country", "Get cookies for a specific country"),
