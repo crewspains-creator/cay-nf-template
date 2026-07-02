@@ -208,10 +208,10 @@ def push_visibility_to_db(service, value):
 import secrets, string
 
 def _gen_key(length=20):
-    """Generate a random uppercase alphanumeric license key with dashes."""
     chars = string.ascii_uppercase + string.digits
     raw = ''.join(secrets.choice(chars) for _ in range(length))
-    return '-'.join(raw[i:i+5] for i in range(0, length, 5))  # e.g. ABCDE-12345-FGHIJ-67890
+    segments = '-'.join(raw[i:i+5] for i in range(0, length, 5))
+    return f"NTX-{segments}"
 
 def create_license_key(days: int = 30) -> str:
     """Create a new license key in Supabase. days=0 means lifetime."""
