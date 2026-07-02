@@ -788,7 +788,23 @@ def admin_stock_markup():
         types.InlineKeyboardButton("🔄 Sync Stock from DB", callback_data="admin_sync_stock"),
         types.InlineKeyboardButton("🔄 Reset All to 0",     callback_data="admin_reset_all"),
     )
+    markup.add(types.InlineKeyboardButton("🔑 Licence Keys", callback_data="admin_keys"))
     markup.add(types.InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu"))
+    return markup
+
+def admin_keys_markup():
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton("⏱ 1 Day",      callback_data="genkey_1"),
+        types.InlineKeyboardButton("📅 7 Days",     callback_data="genkey_7"),
+    )
+    markup.add(
+        types.InlineKeyboardButton("📆 30 Days",    callback_data="genkey_30"),
+        types.InlineKeyboardButton("♾️ Lifetime",   callback_data="genkey_0"),
+    )
+    markup.add(types.InlineKeyboardButton("🗝 List Keys",    callback_data="admin_listkeys"))
+    markup.add(types.InlineKeyboardButton("🗑 Revoke a Key", callback_data="admin_revokekey"))
+    markup.add(types.InlineKeyboardButton("◀️ Back",         callback_data="admin_back"))
     return markup
 
 # ====================== BUILD FUNCTIONS ======================
@@ -1232,9 +1248,20 @@ def handle_country_service_selection(call):
 @bot.message_handler(func=lambda m: m.chat.id in ADMIN_IDS and m.chat.id in ADMIN_PENDING)
 def admin_set_stock_value(message):
     chat_id = message.chat.id
-    tier = ADMIN_PENDING.pop(chat_id, None)
+tier = ADMIN_PENDING.pop(chat_id, None)
     if not tier:
         return
+
+    if tier == "revokekey":
+        key = message.text.strip()
+        ok, evicted = revoke_license_by_key(key)
+        if ok:
+            note = f"\n👤 User <code>{evicted}</code> kicked out." if evicted else ""
+            bot.send_message(chat_id, f"✅ Key revoked.\n<code>{key}</code>{note}", reply_markup=admin_keys_markup(), parse_mode="HTML")
+        else:
+            bot.send_message(chat_id, "❌ Revoke failed — key not found or DB error.", reply_markup=admin_keys_markup(), parse_mode="HTML")
+        return
+
     try:
         value = int(message.text.strip())
         if value < 0:
@@ -1303,6 +1330,57 @@ def handle_callback(call):
                 "🛠 <b>ADMIN PANEL — STOCK MANAGER</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\nTap a service to set its stock count.\nCurrent values shown in brackets.",
                 admin_stock_markup()
             )
+
+
+elif data == "admin_keys" and chat_id in ADMIN_IDS:
+        edit_current_message(call,
+            "🔑 <b>LICENCE KEY MANAGER</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Tap a duration to generate a new key.\n"
+            "Or list / revoke existing keys below.",
+            admin_keys_markup()
+        )
+
+    elif data.startswith("genkey_") and chat_id in ADMIN_IDS:
+        days = int(data.split("_")[1])
+        key = create_license_key(days)
+        expiry = f"{days} days" if days > 0 else "Lifetime ♾️"
+        bot.send_message(chat_id,
+            f"🔑 <b>New Key Generated</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"<code>{key}</code>\n\n"
+            f"⏳ <b>Validity:</b> <code>{expiry}</code>\n\n"
+            f"📋 Copy the key above and share it.",
+            reply_markup=admin_keys_markup(),
+            parse_mode="HTML"
+        )
+
+    elif data == "admin_listkeys" and chat_id in ADMIN_IDS:
+        rows = list_licenses(limit=25)
+        if not rows:
+            bot.send_message(chat_id, "No licence keys found.")
+        else:
+            lines = ["🗝 <b>Recent Licence Keys</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n"]
+            for r in rows:
+                status   = "✅" if r["is_active"] else "❌"
+                assigned = f"<code>{r['assigned_to']}</code>" if r["assigned_to"] else "unassigned"
+                exp      = r["expires_at"][:10] if r.get("expires_at") else "lifetime"
+                lines.append(f"{status} <code>{r['key']}</code>\n   └ {assigned} · {exp}")
+            bot.send_message(chat_id, "\n".join(lines), reply_markup=admin_keys_markup(), parse_mode="HTML")
+
+    elif data == "admin_revokekey" and chat_id in ADMIN_IDS:
+        ADMIN_PENDING[chat_id] = "revokekey"
+        bot.send_message(chat_id,
+            "🗑 <b>Revoke a Key</b>\n\n"
+            "Send the key you want to revoke:",
+            parse_mode="HTML"
+        )
+
+    elif data == "admin_back" and chat_id in ADMIN_IDS:
+        edit_current_message(call,
+            "🛠 <b>ADMIN PANEL — STOCK MANAGER</b>\n━━━━━━━━━━━━━━━━━━━━━━━━\n\nTap a service to set its stock count.",
+            admin_stock_markup()
+        )
 
     elif data == "admin_sync_stock" and chat_id in ADMIN_IDS:
         sync_stock_from_db()
